@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/schemas/property-growth-input.schema.json",
+  "title": "Property Growth Estimator Input",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["suburb", "address", "propertyType", "lastYearValuation"],
+  "properties": {
+    "suburb": { "type": "string", "minLength": 3 },
+    "address": { "type": "string", "minLength": 5 },
+    "propertyType": { "type": "string", "enum": ["house", "unit"] },
+    "lastYearValuation": { "type": "number", "minimum": 0 },
+    "comparableType": { "type": "string", "enum": ["sold"], "default": "sold" },
+    "currency": { "type": "string", "enum": ["AUD"], "default": "AUD" }
+  }
+}

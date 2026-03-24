@@ -1,0 +1,78 @@
+{
+  "version": "1.0",
+  "goal": "Extract suburb growth, address valuation signals, and comparable sold properties for a target Australian property from rendered portal pages.",
+  "normalizationRules": {
+    "currency": "AUD",
+    "growthPercent": "numeric percentage without % sign",
+    "money": "integer number of dollars",
+    "dateFormat": "ISO-8601 where possible",
+    "currentValuationFormula": "lastYearValuation * (1 + growthPercent / 100)",
+    "growthCalculationMethod": "average_of_available_site_growths"
+  },
+  "sites": {
+    "realestate_com_au": {
+      "label": "realestate.com.au",
+      "extractors": {
+        "propertyTypeMatched": {
+          "strategy": "Infer from URL path containing '/property/unit-' or '/property/house-' and optionally confirm from rendered heading text"
+        },
+        "suburbGrowthPercent": {
+          "selector": "[data-testid='growth-percentage']",
+          "attribute": "growth",
+          "fallbackParseRegex": "([0-9]+(?:\\.[0-9]+)?)"
+        },
+        "medianPrice": {
+          "selector": "[data-testid='median-price-display']",
+          "parse": "currency_text_to_integer"
+        },
+        "medianPricePeriod": {
+          "selector": "[data-testid='median-price-date']"
+        },
+        "propertyComAuUrl": {
+          "selectorFallbacks": [
+            "a[href*='property.com.au']",
+            "#rea-pp\\:backlink\\:pca-pp a"
+          ],
+          "attribute": "href"
+        }
+      }
+    },
+    "domain_com_au": {
+      "label": "domain.com.au",
+      "extractors": {
+        "estimateCardPresent": {
+          "selector": "[data-testid='estimate-card']"
+        },
+        "estimateRange": {
+          "containerSelector": "[data-testid='estimate-card']",
+          "labelSelectors": ["h4"],
+          "valueSelector": "[data-testid='currency']"
+        },
+        "estimateAccuracy": {
+          "selector": "[data-testid='info-text']"
+        },
+        "estimateUpdatedAt": {
+          "containerSelector": "[data-testid='estimate-card']",
+          "fallbackRegex": "Updated:\\s*(.*)$"
+        }
+      }
+    },
+    "property_com_au": {
+      "label": "property.com.au",
+      "extractors": {
+        "soldHistory": {
+          "strategy": "Extract sold price history records if visible"
+        },
+        "suburbGrowthPercent": {
+          "strategy": "Extract only if the page explicitly shows market growth for the requested property type"
+        },
+        "medianPrice": {
+          "strategy": "Extract if suburb profile explicitly shows median sold price"
+        },
+        "comparables": {
+          "strategy": "Extract sold comparable address cards if visible on property profile or suburb profile"
+        }
+      }
+    }
+  }
+}

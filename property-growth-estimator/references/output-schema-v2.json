@@ -1,0 +1,121 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/schemas/property-growth-extraction-output-v2.schema.json",
+  "title": "Property Growth Extraction Output v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["input", "result", "siteEstimates", "selectedComparables", "confidence", "assumptions", "errors"],
+  "properties": {
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["suburb", "address", "propertyType", "lastYearValuation", "comparableType", "currency"],
+      "properties": {
+        "suburb": { "type": "string", "minLength": 3 },
+        "address": { "type": "string", "minLength": 5 },
+        "propertyType": { "type": "string", "enum": ["house", "unit"] },
+        "lastYearValuation": { "type": "number", "minimum": 0 },
+        "comparableType": { "type": "string", "enum": ["sold"] },
+        "currency": { "type": "string", "enum": ["AUD"] }
+      }
+    },
+    "result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["growthPercent", "currentValuation", "growthCalculationMethod", "sitesUsed"],
+      "properties": {
+        "growthPercent": { "type": ["number", "null"] },
+        "currentValuation": { "type": ["number", "null"] },
+        "growthCalculationMethod": { "type": "string", "enum": ["average_of_available_site_growths"] },
+        "sitesUsed": {
+          "type": "array",
+          "items": { "type": "string", "enum": ["realestate.com.au", "domain.com.au", "property.com.au"] },
+          "uniqueItems": true
+        }
+      }
+    },
+    "siteEstimates": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["realestate_com_au", "domain_com_au", "property_com_au"],
+      "properties": {
+        "realestate_com_au": { "$ref": "#/$defs/siteEstimate" },
+        "domain_com_au": { "$ref": "#/$defs/siteEstimate" },
+        "property_com_au": { "$ref": "#/$defs/siteEstimate" }
+      }
+    },
+    "selectedComparables": {
+      "type": "array",
+      "maxItems": 3,
+      "items": { "$ref": "#/$defs/comparable" }
+    },
+    "confidence": { "type": "string", "enum": ["low", "medium", "high"] },
+    "assumptions": { "type": "array", "items": { "type": "string" } },
+    "errors": { "type": "array", "items": { "type": "string" } }
+  },
+  "$defs": {
+    "siteEstimate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["label", "suburbGrowthPercent", "medianPrice", "medianPricePeriod", "propertyEstimateRange", "estimateAccuracy", "estimateUpdatedAt", "propertyTypeMatched", "comparables", "soldHistory", "sourceUrl", "notes"],
+      "properties": {
+        "label": { "type": "string" },
+        "suburbGrowthPercent": { "type": ["number", "null"] },
+        "medianPrice": { "type": ["number", "null"], "minimum": 0 },
+        "medianPricePeriod": { "type": ["string", "null"] },
+        "propertyEstimateRange": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["low", "mid", "high"],
+          "properties": {
+            "low": { "type": ["number", "null"], "minimum": 0 },
+            "mid": { "type": ["number", "null"], "minimum": 0 },
+            "high": { "type": ["number", "null"], "minimum": 0 }
+          }
+        },
+        "estimateAccuracy": { "type": ["string", "null"] },
+        "estimateUpdatedAt": { "type": ["string", "null"] },
+        "propertyTypeMatched": { "type": "boolean" },
+        "comparables": {
+          "type": "array",
+          "maxItems": 10,
+          "items": { "$ref": "#/$defs/comparable" }
+        },
+        "soldHistory": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/soldRecord" }
+        },
+        "sourceUrl": { "type": ["string", "null"] },
+        "notes": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "comparable": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["address"],
+      "properties": {
+        "address": { "type": "string", "minLength": 5 },
+        "salePrice": { "type": ["number", "null"], "minimum": 0 },
+        "saleDate": { "type": ["string", "null"] },
+        "distanceKm": { "type": ["number", "null"], "minimum": 0 },
+        "bedrooms": { "type": ["number", "null"], "minimum": 0 },
+        "bathrooms": { "type": ["number", "null"], "minimum": 0 },
+        "parking": { "type": ["number", "null"], "minimum": 0 },
+        "propertyType": { "type": ["string", "null"], "enum": ["house", "unit", null] },
+        "source": { "type": ["string", "null"], "enum": ["realestate.com.au", "domain.com.au", "property.com.au", null] },
+        "sourceUrl": { "type": ["string", "null"] }
+      }
+    },
+    "soldRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["date", "price"],
+      "properties": {
+        "date": { "type": ["string", "null"] },
+        "price": { "type": ["number", "null"], "minimum": 0 },
+        "source": { "type": ["string", "null"], "enum": ["realestate.com.au", "domain.com.au", "property.com.au", null] },
+        "sourceUrl": { "type": ["string", "null"] }
+      }
+    }
+  }
+}
