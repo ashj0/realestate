@@ -1,0 +1,130 @@
+import type { ComparableRecord, PropertyGrowthInput, PropertyGrowthResult, SiteEstimate, SiteLabel } from './types.js';
+import { fetchScrapflyContent } from './scrapfly.js';
+import { extractDomain, extractProperty, extractRealestate } from './extractors.js';
+import { average, uniqueBy } from './utils.js';
+import { validateOutput } from './validation.js';
+
+const DEFAULT_URLS = {
+  realestate: 'https://www.realestate.com.au/property/unit-705-60-riversdale-rd-rivervale-wa-6103/',
+  domain: 'https://www.domain.com.au/property-profile/705-60-riversdale-road-rivervale-wa-6103',
+  property: 'https://www.property.com.au/wa/rivervale-6103/riversdale-rd/705-60-pid-20009700/'
+};
+
+function emptySiteEstimates(input: PropertyGrowthInput) {
+  return {
+    realestate_com_au: extractRealestate('', input.knownUrls?.realestate ?? DEFAULT_URLS.realestate, input.address),
+    domain_com_au: extractDomain('', input.knownUrls?.domain ?? DEFAULT_URLS.domain, input.address),
+    property_com_au: extractProperty('', input.knownUrls?.property ?? DEFAULT_URLS.property, input.address)
+  };
+}
+
+function collectGrowths(siteEstimates: PropertyGrowthResult['siteEstimates']): { values: number[]; sitesUsed: SiteLabel[] } {
+  const entries: Array<[SiteLabel, SiteEstimate]> = [
+    ['realestate.com.au', siteEstimates.realestate_com_au],
+    ['domain.com.au', siteEstimates.domain_com_au],
+    ['property.com.au', siteEstimates.property_com_au]
+  ];
+
+  const values: number[] = [];
+  const sitesUsed: SiteLabel[] = [];
+
+  for (const [label, estimate] of entries) {
+    if (estimate.propertyTypeMatched && typeof estimate.suburbGrowthPercent === 'number') {
+      values.push(estimate.suburbGrowthPercent);
+      sitesUsed.push(label);
+    }
+  }
+
+  return { values, sitesUsed };
+}
+
+function selectComparables(siteEstimates: PropertyGrowthResult['siteEstimates']): ComparableRecord[] {
+  const combined = [
+    ...siteEstimates.realestate_com_au.comparables,
+    ...siteEstimates.domain_com_au.comparables,
+    ...siteEstimates.property_com_au.comparables
+  ];
+
+  return uniqueBy(
+    combined.filter((item) => item.address && item.price !== null && item.price !== undefined),
+    (item) => `${item.source ?? 'unknown'}|${item.address}|${item.date ?? ''}|${item.price ?? ''}`
+  ).slice(0, 3);
+}
+
+function determineConfidence(siteEstimates: PropertyGrowthResult['siteEstimates'], selectedComparables: ComparableRecord[]): PropertyGrowthResult['confidence'] {
+  const usefulSources = [siteEstimates.realestate_com_au, siteEstimates.domain_com_au, siteEstimates.property_com_au].filter(
+    (estimate) => estimate.propertyTypeMatched && (estimate.suburbGrowthPercent !== null || estimate.propertyEstimateRange.mid !== null || estimate.soldHistory.length > 0)
+  ).length;
+
+  if (usefulSources >= 3 && selectedComparables.length >= 2) return 'high';
+  if (usefulSources >= 2) return 'medium';
+  return 'low';
+}
+
+export async function estimatePropertyGrowth(input: PropertyGrowthInput, apiKey: string): Promise<PropertyGrowthResult> {
+  const errors: string[] = [];
+  const assumptions: string[] = [];
+  const urls = {
+    realestate: input.knownUrls?.realestate ?? DEFAULT_URLS.realestate,
+    domain: input.knownUrls?.domain ?? DEFAULT_URLS.domain,
+    property: input.knownUrls?.property ?? DEFAULT_URLS.property
+  };
+
+  const siteEstimates = emptySiteEstimates(input);
+
+  await Promise.all([
+    fetchScrapflyContent(urls.realestate, apiKey)
+      .then((content) => {
+        siteEstimates.realestate_com_au = extractRealestate(content, urls.realestate, input.address);
+      })
+      .catch((error: Error) => errors.push(`realestate.com.au: ${error.message}`)),
+    fetchScrapflyContent(urls.domain, apiKey)
+      .then((content) => {
+        siteEstimates.domain_com_au = extractDomain(content, urls.domain, input.address);
+      })
+      .catch((error: Error) => errors.push(`domain.com.au: ${error.message}`)),
+    fetchScrapflyContent(urls.property, apiKey)
+      .then((content) => {
+        siteEstimates.property_com_au = extractProperty(content, urls.property, input.address);
+      })
+      .catch((error: Error) => errors.push(`property.com.au: ${error.message}`))
+  ]);
+
+  const { values, sitesUsed } = collectGrowths(siteEstimates);
+  const growthPercent = average(values);
+  const currentValuation = growthPercent === null ? null : Math.round(input.lastYearValuation * (1 + growthPercent / 100));
+  const selectedComparables = selectComparables(siteEstimates);
+  const confidence = determineConfidence(siteEstimates, selectedComparables);
+
+  if (growthPercent !== null) {
+    assumptions.push(`Current valuation calculated as $${input.lastYearValuation.toLocaleString('en-AU')} * (1 + ${growthPercent}%) = $${currentValuation?.toLocaleString('en-AU')}`);
+  } else {
+    assumptions.push('No valid suburb growth values were available, so growthPercent and currentValuation are null');
+  }
+
+  if (siteEstimates.realestate_com_au.suburbGrowthPercent !== null && siteEstimates.realestate_com_au.propertyTypeMatched) {
+    assumptions.push(`Using unit median growth (${siteEstimates.realestate_com_au.suburbGrowthPercent}%) from realestate.com.au`);
+  }
+
+  const output: PropertyGrowthResult = {
+    input,
+    result: {
+      growthPercent,
+      currentValuation,
+      growthCalculationMethod: 'average_of_available_site_growths',
+      sitesUsed
+    },
+    siteEstimates,
+    selectedComparables,
+    confidence,
+    assumptions,
+    errors
+  };
+
+  const validation = validateOutput(output);
+  if (!validation.valid) {
+    output.errors.push(...validation.errors.map((error) => `output validation: ${error}`));
+  }
+
+  return output;
+}
