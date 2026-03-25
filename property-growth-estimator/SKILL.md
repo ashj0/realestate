@@ -76,7 +76,7 @@ Primary source for:
 - property.com.au backlink if visible
 
 Extract:
-- `suburbGrowthPercent` from unit median yearly change percentage
+- `suburbGrowthPercent` from the yearly growth element with class `MedianPriceGrowth__GrowthValue`
 - `medianPrice` from unit median value
 - `medianPricePeriod` from unit median display
 - `propertyTypeMatched = true` only if the page confirms `unit` or `apartment` context
