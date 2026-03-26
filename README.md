@@ -147,6 +147,44 @@ This will generate fallback suburb URLs automatically:
 - `https://www.property.com.au/wa/rivervale-6103/`
 - `https://www.domain.com.au/suburb-profile/rivervale-wa-6103`
 
+## Usage modes
+
+### Address-level mode
+
+Use this when you know the exact property/profile URLs and want the most precise extraction.
+
+Inputs typically include:
+- `suburb`
+- `state`
+- `postCode`
+- `address`
+- `knownUrls`
+
+Best for:
+- address-specific estimates
+- sold history for a property
+- tighter comparable selection
+
+### Suburb-only mode
+
+Use this when you only know suburb-level location details and want the app to generate fallback URLs.
+
+Inputs typically include:
+- `suburb`
+- `state`
+- `postCode`
+- optional `address`
+- no `knownUrls`
+
+Best for:
+- suburb-level growth lookup
+- median price lookup
+- early-stage testing before exact property URLs are known
+
+Tradeoff:
+- suburb-only mode is more convenient
+- address-level mode is usually more accurate
+
 ## Notes
 
 - Uses Scrapfly rendered responses instead of direct browser navigation.
