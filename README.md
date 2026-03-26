@@ -125,6 +125,28 @@ curl -s -X POST http://localhost:3000/estimate \
   }" | jq
 ```
 
+Example using suburb/state/postCode only (no `knownUrls`):
+
+```bash
+curl -s -X POST http://localhost:3000/estimate \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "suburb": "Rivervale",
+    "state": "WA",
+    "postCode": "6103",
+    "address": "705/60 Riversdale Road, Rivervale WA 6103",
+    "propertyType": "unit",
+    "lastYearValuation": 1000000,
+    "comparableType": "sold",
+    "currency": "AUD"
+  }' | jq
+```
+
+This will generate fallback suburb URLs automatically:
+- `https://www.realestate.com.au/wa/rivervale-6103/`
+- `https://www.property.com.au/wa/rivervale-6103/`
+- `https://www.domain.com.au/suburb-profile/rivervale-wa-6103`
+
 ## Notes
 
 - Uses Scrapfly rendered responses instead of direct browser navigation.
