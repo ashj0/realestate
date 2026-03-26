@@ -1,12 +1,12 @@
-import AjvModule from 'ajv';
+import Ajv2020Module from 'ajv/dist/2020.js';
 import addFormatsModule from 'ajv-formats';
 import { inputSchema, outputSchema } from './schemas.js';
 import type { ErrorObject } from 'ajv';
 import type { PropertyGrowthInput, PropertyGrowthResult } from './types.js';
 
-const Ajv = AjvModule.default ?? AjvModule;
+const Ajv2020 = Ajv2020Module.default ?? Ajv2020Module;
 const addFormats = addFormatsModule.default ?? addFormatsModule;
-const ajv = new Ajv({ allErrors: true, strict: false });
+const ajv = new Ajv2020({ allErrors: true, strict: false });
 addFormats(ajv);
 
 const validateInputSchema = ajv.compile<PropertyGrowthInput>(inputSchema);
@@ -25,7 +25,8 @@ export function withInputDefaults(input: Partial<PropertyGrowthInput>): Property
 }
 
 export function validateInput(input: PropertyGrowthInput): { valid: true } | { valid: false; errors: string[] } {
-  const valid = validateInputSchema(input);
+  const { knownUrls: _knownUrls, ...schemaInput } = input;
+  const valid = validateInputSchema(schemaInput);
   if (valid) return { valid: true };
   return {
     valid: false,

@@ -1,5 +1,6 @@
+import { load } from 'cheerio';
 import type { ComparableRecord, SiteEstimate, SiteLabel, SoldHistoryRecord } from './types.js';
-import { containsUnitContext, findFirstMatch, normalizeWhitespace, parseNumber, parsePercent } from './utils.js';
+import { containsUnitContext, normalizeWhitespace, parseNumber, parsePercent } from './utils.js';
 
 function emptyEstimate(label: SiteLabel, sourceUrl: string | null): SiteEstimate {
   return {
@@ -18,14 +19,29 @@ function emptyEstimate(label: SiteLabel, sourceUrl: string | null): SiteEstimate
   };
 }
 
-function extractSoldHistory(text: string, source: SiteLabel, sourceUrl: string | null): SoldHistoryRecord[] {
+function textFromSelector($: ReturnType<typeof load>, selectors: string[]): string | null {
+  for (const selector of selectors) {
+    const value = normalizeWhitespace($(selector).first().text());
+    if (value) return value;
+  }
+  return null;
+}
+
+function attrFromSelector($: ReturnType<typeof load>, selectors: string[], attr: string): string | null {
+  for (const selector of selectors) {
+    const value = $(selector).first().attr(attr);
+    if (value && normalizeWhitespace(value)) return normalizeWhitespace(value);
+  }
+  return null;
+}
+
+function extractSoldHistoryFromText(text: string, source: SiteLabel, sourceUrl: string | null): SoldHistoryRecord[] {
   const records: SoldHistoryRecord[] = [];
-  const pattern = /(\b(?:\d{4}-\d{2}-\d{2}|(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{4})\b)[^$]{0,80}(\$[\d,]+)/gi;
+  const pattern = /(\b(?:\d{4}-\d{2}-\d{2}|(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)[a-zA-Z]*\s+\d{4})\b)[^$]{0,80}(\$[\d,]+)/g;
   for (const match of text.matchAll(pattern)) {
     records.push({
       date: normalizeWhitespace(match[1]),
-      price: normalizeWhitespace(match[2]),
-      type: 'Sold',
+      price: parseNumber(match[2]),
       source,
       sourceUrl
     });
@@ -34,27 +50,45 @@ function extractSoldHistory(text: string, source: SiteLabel, sourceUrl: string |
   return records;
 }
 
-function extractComparablesFromHistory(history: SoldHistoryRecord[], address: string, source: SiteLabel, sourceUrl: string | null): ComparableRecord[] {
+function soldHistoryToComparables(history: SoldHistoryRecord[], address: string, source: SiteLabel, sourceUrl: string | null): ComparableRecord[] {
   return history.slice(0, 3).map((record) => ({
-    date: record.date ?? null,
-    price: typeof record.price === 'number' ? record.price : parseNumber(String(record.price ?? '')),
     address,
+    saleDate: record.date ?? null,
+    salePrice: typeof record.price === 'number' ? record.price : null,
     source,
     sourceUrl
-  }));
+  } as unknown as ComparableRecord));
+}
+
+function rollingTwelveMonthPeriod(): string {
+  const now = new Date();
+  const end = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+  const start = new Date(Date.UTC(end.getUTCFullYear() - 1, end.getUTCMonth() + 1, 1));
+  const fmt = new Intl.DateTimeFormat('en-AU', { month: 'short', year: 'numeric', timeZone: 'UTC' });
+  const startText = fmt.format(start).replace(',', '');
+  const endText = fmt.format(new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), 0))).replace(',', '');
+  return `${startText} - ${endText}`;
 }
 
 export function extractRealestate(content: string, sourceUrl: string | null, address: string): SiteEstimate {
   const estimate = emptyEstimate('realestate.com.au', sourceUrl);
-  const text = normalizeWhitespace(content);
+  if (!content) return estimate;
 
-  estimate.suburbGrowthPercent = parsePercent(findFirstMatch(text, [/(\d+(?:\.\d+)?)\s*%[^.]{0,40}(?:yearly change|YoY|annual)/i]));
-  estimate.medianPrice = parseNumber(findFirstMatch(text, [/median[^$]{0,30}(\$[\d,]+)/i, /unit median[^$]{0,20}(\$[\d,]+)/i]));
-  estimate.medianPricePeriod = findFirstMatch(text, [/(?:median display|median price period|updated)[:\s-]+([A-Z][a-z]{2,8}\s+\d{4})/i]);
-  estimate.estimateUpdatedAt = findFirstMatch(text, [/(?:updated|last updated)[:\s-]+([A-Z][a-z]{2,8}\s+\d{4})/i]);
-  estimate.propertyTypeMatched = containsUnitContext(text);
-  estimate.soldHistory = extractSoldHistory(text, 'realestate.com.au', sourceUrl);
-  estimate.comparables = extractComparablesFromHistory(estimate.soldHistory, address, 'realestate.com.au', sourceUrl);
+  const $ = load(content);
+  const bodyText = normalizeWhitespace($.root().text());
+
+  const growthAttr = attrFromSelector($, ['[data-testid="growth-percentage"]'], 'growth');
+  const growthText = textFromSelector($, ['[data-testid="growth-percentage"]', '[class^="MedianPriceGrowth__GrowthValue"]']);
+  const medianText = textFromSelector($, ['[data-testid="median-price-display"]']);
+  const updatedText = bodyText.match(/(?:Updated|Last updated)[:\s-]+([A-Z][a-z]{2,8}\s+\d{4})/i)?.[1] ?? null;
+
+  estimate.suburbGrowthPercent = parsePercent(growthAttr ?? growthText);
+  estimate.medianPrice = parseNumber(medianText);
+  estimate.medianPricePeriod = rollingTwelveMonthPeriod();
+  estimate.estimateUpdatedAt = updatedText ? normalizeWhitespace(updatedText) : null;
+  estimate.propertyTypeMatched = containsUnitContext(bodyText) || /\/property\/unit-/i.test(sourceUrl ?? '');
+  estimate.soldHistory = extractSoldHistoryFromText(bodyText, 'realestate.com.au', sourceUrl);
+  estimate.comparables = soldHistoryToComparables(estimate.soldHistory, address, 'realestate.com.au', sourceUrl);
 
   if (estimate.medianPrice !== null) {
     estimate.notes.push(`Unit median: $${estimate.medianPrice.toLocaleString('en-AU')}`);
@@ -68,21 +102,26 @@ export function extractRealestate(content: string, sourceUrl: string | null, add
 
 export function extractDomain(content: string, sourceUrl: string | null, address: string): SiteEstimate {
   const estimate = emptyEstimate('domain.com.au', sourceUrl);
-  const text = normalizeWhitespace(content);
-  const rangeMatch = text.match(/\$([\d,]+)\s*(?:-|to)\s*\$([\d,]+)[^.]{0,40}\$([\d,]+)/i);
-  const estimateText = findFirstMatch(text, [/(Estimate[^.]{0,120})/i]);
+  if (!content) return estimate;
 
-  estimate.propertyEstimateRange.low = rangeMatch ? parseNumber(rangeMatch[1]) : null;
-  estimate.propertyEstimateRange.mid = estimateText ? parseNumber(estimateText) : null;
-  estimate.propertyEstimateRange.high = rangeMatch ? parseNumber(rangeMatch[3]) : null;
-  estimate.estimateAccuracy = findFirstMatch(text, [/(High accuracy|Medium accuracy|Low accuracy)/i]);
-  estimate.estimateUpdatedAt = findFirstMatch(text, [/(?:Updated|Last updated)[:\s-]+([A-Z][a-z]{2,8}\s+\d{4}|\d{4}-\d{2}-\d{2})/i]);
-  estimate.propertyTypeMatched = containsUnitContext(text);
-  estimate.soldHistory = extractSoldHistory(text, 'domain.com.au', sourceUrl);
-  estimate.comparables = extractComparablesFromHistory(estimate.soldHistory, address, 'domain.com.au', sourceUrl);
+  const $ = load(content);
+  const bodyText = normalizeWhitespace($.root().text());
+  const estimateRangeText = textFromSelector($, ['div[aria-label="Estimate Range"]']);
+  const estimateTitle = textFromSelector($, ['[aria-label="Estimate Range"]']);
+  const combinedEstimate = normalizeWhitespace([estimateRangeText, estimateTitle].filter(Boolean).join(' '));
+  const amounts = Array.from(combinedEstimate.matchAll(/\$([\d,]+)/g)).map((match) => parseNumber(match[1])).filter((value): value is number => value !== null);
 
-  if (estimateText) {
-    estimate.notes.push(normalizeWhitespace(estimateText));
+  estimate.propertyEstimateRange.low = amounts[0] ?? null;
+  estimate.propertyEstimateRange.mid = amounts[1] ?? (amounts.length >= 2 ? Math.round((amounts[0] + amounts[amounts.length - 1]) / 2) : null);
+  estimate.propertyEstimateRange.high = amounts[amounts.length - 1] ?? null;
+  estimate.estimateAccuracy = textFromSelector($, ['[aria-label="Estimate Range"] + *', 'body'])?.match(/(High accuracy|Medium accuracy|Low accuracy)/i)?.[1] ?? null;
+  estimate.estimateUpdatedAt = bodyText.match(/(?:Updated|Last updated)[:\s-]+([A-Z][a-z]{2,8}\s+\d{4}|\d{4}-\d{2}-\d{2})/i)?.[1] ?? null;
+  estimate.propertyTypeMatched = containsUnitContext(bodyText) || /property-profile/i.test(sourceUrl ?? '');
+  estimate.soldHistory = extractSoldHistoryFromText(bodyText, 'domain.com.au', sourceUrl);
+  estimate.comparables = soldHistoryToComparables(estimate.soldHistory, address, 'domain.com.au', sourceUrl);
+
+  if (combinedEstimate) {
+    estimate.notes.push(combinedEstimate);
   }
 
   return estimate;
@@ -90,14 +129,21 @@ export function extractDomain(content: string, sourceUrl: string | null, address
 
 export function extractProperty(content: string, sourceUrl: string | null, address: string): SiteEstimate {
   const estimate = emptyEstimate('property.com.au', sourceUrl);
-  const text = normalizeWhitespace(content);
+  if (!content) return estimate;
 
-  estimate.suburbGrowthPercent = parsePercent(findFirstMatch(text, [/(\d+(?:\.\d+)?)\s*%[^.]{0,40}(?:growth|annual)/i]));
-  estimate.medianPrice = parseNumber(findFirstMatch(text, [/(?:median|3 bed median)[^$]{0,20}(\$[\d,]+)/i]));
-  estimate.medianPricePeriod = findFirstMatch(text, [/(?:median price period|updated)[:\s-]+([A-Z][a-z]{2,8}\s+\d{4})/i]);
-  estimate.propertyTypeMatched = containsUnitContext(text);
-  estimate.soldHistory = extractSoldHistory(text, 'property.com.au', sourceUrl);
-  estimate.comparables = extractComparablesFromHistory(estimate.soldHistory, address, 'property.com.au', sourceUrl);
+  const $ = load(content);
+  const bodyText = normalizeWhitespace($.root().text());
+
+  const growthText = textFromSelector($, ['[class^="MedianCostBrick__TrendIndicator"]']);
+  const medianText = textFromSelector($, ['[class^="MedianCostBrick__CostValue"]']);
+  const periodText = bodyText.match(/([A-Z][a-z]{2,8}\s+\d{4})/i)?.[1] ?? null;
+
+  estimate.suburbGrowthPercent = parsePercent(growthText);
+  estimate.medianPrice = parseNumber(medianText);
+  estimate.medianPricePeriod = periodText ? normalizeWhitespace(periodText) : null;
+  estimate.propertyTypeMatched = containsUnitContext(bodyText) || /\/unit-/i.test(bodyText);
+  estimate.soldHistory = extractSoldHistoryFromText(bodyText, 'property.com.au', sourceUrl);
+  estimate.comparables = soldHistoryToComparables(estimate.soldHistory, address, 'property.com.au', sourceUrl);
 
   if (estimate.medianPrice !== null) {
     estimate.notes.push(`Median: $${estimate.medianPrice.toLocaleString('en-AU')}`);

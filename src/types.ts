@@ -22,16 +22,20 @@ export interface PropertyEstimateRange {
 
 export interface SoldHistoryRecord {
   date: string | null;
-  price: string | number | null;
-  type?: string | null;
+  price: number | null;
   source?: SiteLabel | null;
   sourceUrl?: string | null;
 }
 
 export interface ComparableRecord {
-  date?: string | null;
-  price?: number | null;
   address: string;
+  salePrice?: number | null;
+  saleDate?: string | null;
+  distanceKm?: number | null;
+  bedrooms?: number | null;
+  bathrooms?: number | null;
+  parking?: number | null;
+  propertyType?: PropertyType | null;
   source?: SiteLabel | null;
   sourceUrl?: string | null;
 }
@@ -52,7 +56,7 @@ export interface SiteEstimate {
 }
 
 export interface PropertyGrowthResult {
-  input: PropertyGrowthInput;
+  input: Omit<PropertyGrowthInput, 'knownUrls'>;
   result: {
     growthPercent: number | null;
     currentValuation: number | null;
