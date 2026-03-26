@@ -61,13 +61,7 @@ function soldHistoryToComparables(history: SoldHistoryRecord[], address: string,
 }
 
 function rollingTwelveMonthPeriod(): string {
-  const now = new Date();
-  const end = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
-  const start = new Date(Date.UTC(end.getUTCFullYear() - 1, end.getUTCMonth() + 1, 1));
-  const fmt = new Intl.DateTimeFormat('en-AU', { month: 'short', year: 'numeric', timeZone: 'UTC' });
-  const startText = fmt.format(start).replace(',', '');
-  const endText = fmt.format(new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), 0))).replace(',', '');
-  return `${startText} - ${endText}`;
+  return '12 months';
 }
 
 export function extractRealestate(content: string, sourceUrl: string | null, address: string): SiteEstimate {
@@ -109,11 +103,13 @@ export function extractDomain(content: string, sourceUrl: string | null, address
   const estimateRangeText = textFromSelector($, ['div[aria-label="Estimate Range"]']);
   const estimateTitle = textFromSelector($, ['[aria-label="Estimate Range"]']);
   const combinedEstimate = normalizeWhitespace([estimateRangeText, estimateTitle].filter(Boolean).join(' '));
-  const amounts = Array.from(combinedEstimate.matchAll(/\$([\d,]+)/g)).map((match) => parseNumber(match[1])).filter((value): value is number => value !== null);
+  const lowText = combinedEstimate.match(/Low\s*\$?([\d.,]+\s*[mk]?)/i)?.[1] ?? null;
+  const midText = combinedEstimate.match(/Mid\s*\$?([\d.,]+\s*[mk]?)/i)?.[1] ?? null;
+  const highText = combinedEstimate.match(/High\s*\$?([\d.,]+\s*[mk]?)/i)?.[1] ?? null;
 
-  estimate.propertyEstimateRange.low = amounts[0] ?? null;
-  estimate.propertyEstimateRange.mid = amounts[1] ?? (amounts.length >= 2 ? Math.round((amounts[0] + amounts[amounts.length - 1]) / 2) : null);
-  estimate.propertyEstimateRange.high = amounts[amounts.length - 1] ?? null;
+  estimate.propertyEstimateRange.low = parseNumber(lowText);
+  estimate.propertyEstimateRange.mid = parseNumber(midText);
+  estimate.propertyEstimateRange.high = parseNumber(highText);
   estimate.estimateAccuracy = textFromSelector($, ['[aria-label="Estimate Range"] + *', 'body'])?.match(/(High accuracy|Medium accuracy|Low accuracy)/i)?.[1] ?? null;
   estimate.estimateUpdatedAt = bodyText.match(/(?:Updated|Last updated)[:\s-]+([A-Z][a-z]{2,8}\s+\d{4}|\d{4}-\d{2}-\d{2})/i)?.[1] ?? null;
   estimate.propertyTypeMatched = containsUnitContext(bodyText) || /property-profile/i.test(sourceUrl ?? '');
@@ -136,11 +132,9 @@ export function extractProperty(content: string, sourceUrl: string | null, addre
 
   const growthText = textFromSelector($, ['[class^="MedianCostBrick__TrendIndicator"]']);
   const medianText = textFromSelector($, ['[class^="MedianCostBrick__CostValue"]']);
-  const periodText = bodyText.match(/([A-Z][a-z]{2,8}\s+\d{4})/i)?.[1] ?? null;
-
   estimate.suburbGrowthPercent = parsePercent(growthText);
   estimate.medianPrice = parseNumber(medianText);
-  estimate.medianPricePeriod = periodText ? normalizeWhitespace(periodText) : null;
+  estimate.medianPricePeriod = rollingTwelveMonthPeriod();
   estimate.propertyTypeMatched = containsUnitContext(bodyText) || /\/unit-/i.test(bodyText);
   estimate.soldHistory = extractSoldHistoryFromText(bodyText, 'property.com.au', sourceUrl);
   estimate.comparables = soldHistoryToComparables(estimate.soldHistory, address, 'property.com.au', sourceUrl);

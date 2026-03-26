@@ -4,7 +4,18 @@ export function normalizeWhitespace(value: string): string {
 
 export function parseNumber(value: string | null | undefined): number | null {
   if (!value) return null;
-  const cleaned = value.replace(/[^\d.-]/g, '');
+  const normalized = value.trim().toLowerCase();
+  const millionMatch = normalized.match(/([\d.]+)\s*m\b/);
+  if (millionMatch) {
+    const parsedMillion = Number(millionMatch[1]);
+    return Number.isFinite(parsedMillion) ? Math.round(parsedMillion * 1_000_000) : null;
+  }
+  const thousandMatch = normalized.match(/([\d.]+)\s*k\b/);
+  if (thousandMatch) {
+    const parsedThousand = Number(thousandMatch[1]);
+    return Number.isFinite(parsedThousand) ? Math.round(parsedThousand * 1_000) : null;
+  }
+  const cleaned = normalized.replace(/[^\d.-]/g, '');
   if (!cleaned) return null;
   const parsed = Number(cleaned);
   return Number.isFinite(parsed) ? parsed : null;
