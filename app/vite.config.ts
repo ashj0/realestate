@@ -5,5 +5,7 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 5173,
+    host: '0.0.0.0',
+    allowedHosts: ['nemoclawvm.tail5df9d8.ts.net'],
   },
 });
