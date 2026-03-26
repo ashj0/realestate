@@ -10,6 +10,7 @@
     "cli": "node --loader ts-node/esm src/cli.ts",
     "fixture": "node --loader ts-node/esm src/fixture-runner.ts",
     "test": "node --loader ts-node/esm test/run-tests.ts",
+    "test:unit": "node --loader ts-node/esm test/unit-tests.ts",
     "check": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
