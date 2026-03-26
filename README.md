@@ -1,8 +1,10 @@
 # Property Growth Estimator App
 
-Node.js/TypeScript API and CLI for the `property-growth-estimator` workflow.
+Node.js/TypeScript API and CLI for the `property-growth-estimator` workflow, plus a starter React + MUI frontend scaffold for the suburb valuation UI.
 
 ## Setup
+
+### Backend
 
 ```bash
 npm install
@@ -10,6 +12,15 @@ cp .env.example .env
 # set SCRAPFLY_API_KEY in .env
 npm run build
 npm start
+```
+
+### Frontend scaffold
+
+```bash
+cd app
+npm install
+cp .env.example .env
+npm run dev
 ```
 
 ## API
@@ -184,6 +195,19 @@ Best for:
 Tradeoff:
 - suburb-only mode is more convenient
 - address-level mode is usually more accurate
+
+## Frontend scaffold
+
+The React app lives in `app/` and currently includes:
+- premium desktop-first MUI layout
+- suburb autocomplete with mock data
+- selected suburb summary card
+- last year valuation form
+- estimate summary card
+- source breakdown with clickable links
+- placeholder map-selection entry point
+
+Next step is wiring this scaffold to real search, map, and estimate APIs.
 
 ## Notes
 
