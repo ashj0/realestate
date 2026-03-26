@@ -1,6 +1,7 @@
 import 'dotenv/config';
+import { applyInputDefaults } from './defaults.js';
 import { estimatePropertyGrowth } from './service.js';
-import { validateInput, withInputDefaults } from './validation.js';
+import { validateInput } from './validation.js';
 
 async function main() {
   const rawArg = process.argv[2];
@@ -9,7 +10,7 @@ async function main() {
     process.exit(1);
   }
 
-  const input = withInputDefaults(JSON.parse(rawArg));
+  const input = applyInputDefaults(JSON.parse(rawArg));
   const validation = validateInput(input);
   if (!validation.valid) {
     console.error(JSON.stringify({ errors: validation.errors }, null, 2));

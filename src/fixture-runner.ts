@@ -1,13 +1,14 @@
 import 'dotenv/config';
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { applyInputDefaults } from './defaults.js';
 import { estimatePropertyGrowth } from './service.js';
-import { validateInput, withInputDefaults } from './validation.js';
+import { validateInput } from './validation.js';
 
 async function main() {
   const filePath = process.argv[2] ?? path.resolve('src/sample-input.json');
   const raw = await fs.readFile(filePath, 'utf8');
-  const input = withInputDefaults(JSON.parse(raw));
+  const input = applyInputDefaults(JSON.parse(raw));
   const validation = validateInput(input);
 
   if (!validation.valid) {

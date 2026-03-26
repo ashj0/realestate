@@ -1,7 +1,8 @@
 import 'dotenv/config';
 import express from 'express';
+import { applyInputDefaults } from './defaults.js';
 import { estimatePropertyGrowth } from './service.js';
-import { validateInput, withInputDefaults } from './validation.js';
+import { validateInput } from './validation.js';
 
 const app = express();
 app.use(express.json({ limit: '1mb' }));
@@ -11,7 +12,7 @@ app.get('/health', (_req, res) => {
 });
 
 app.post('/estimate', async (req, res) => {
-  const input = withInputDefaults(req.body ?? {});
+  const input = applyInputDefaults(req.body ?? {});
   const validation = validateInput(input);
 
   if (!validation.valid) {

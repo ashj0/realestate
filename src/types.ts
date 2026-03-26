@@ -7,6 +7,8 @@ export type SiteLabel = 'realestate.com.au' | 'domain.com.au' | 'property.com.au
 export interface PropertyGrowthInput {
   suburb: string;
   address: string;
+  state?: string;
+  postCode?: string;
   propertyType: PropertyType;
   lastYearValuation: number;
   comparableType: ComparableType;

@@ -12,20 +12,8 @@ addFormats(ajv);
 const validateInputSchema = ajv.compile<PropertyGrowthInput>(inputSchema);
 const validateOutputSchema = ajv.compile<PropertyGrowthResult>(outputSchema);
 
-export function withInputDefaults(input: Partial<PropertyGrowthInput>): PropertyGrowthInput {
-  return {
-    suburb: input.suburb ?? '',
-    address: input.address ?? '',
-    propertyType: input.propertyType ?? 'unit',
-    lastYearValuation: input.lastYearValuation ?? 0,
-    comparableType: input.comparableType ?? 'sold',
-    currency: input.currency ?? 'AUD',
-    knownUrls: input.knownUrls
-  };
-}
-
 export function validateInput(input: PropertyGrowthInput): { valid: true } | { valid: false; errors: string[] } {
-  const { knownUrls: _knownUrls, ...schemaInput } = input;
+  const { knownUrls: _knownUrls, state: _state, postCode: _postCode, ...schemaInput } = input;
   const valid = validateInputSchema(schemaInput);
   if (valid) return { valid: true };
   return {

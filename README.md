@@ -37,7 +37,9 @@ Example request body:
 
 ```json
 {
-  "suburb": "Rivervale WA 6103",
+  "suburb": "Rivervale",
+  "state": "WA",
+  "postCode": "6103",
   "address": "705/60 Riversdale Road, Rivervale WA 6103",
   "propertyType": "unit",
   "lastYearValuation": 1000000,
@@ -50,6 +52,16 @@ Example request body:
   }
 }
 ```
+
+If you omit `knownUrls`, the app can build suburb-level fallback URLs from:
+- `suburb`
+- `state`
+- `postCode`
+
+Fallback URL formats:
+- `https://www.realestate.com.au/{state}/{suburb}-{postCode}/`
+- `https://www.property.com.au/{state}/{suburb}-{postCode}/`
+- `https://www.domain.com.au/suburb-profile/{suburb}-{state}-{postCode}`
 
 ## CLI
 
@@ -65,7 +77,9 @@ Arbitrary address template:
 curl -s -X POST http://localhost:3000/estimate \
   -H 'Content-Type: application/json' \
   -d '{
-    "suburb": "SUBURB STATE POSTCODE",
+    "suburb": "SUBURB",
+    "state": "STATE",
+    "postCode": "POSTCODE",
     "address": "FULL STREET ADDRESS, SUBURB STATE POSTCODE",
     "propertyType": "unit",
     "lastYearValuation": 1000000,
@@ -82,7 +96,9 @@ curl -s -X POST http://localhost:3000/estimate \
 Example with shell variables:
 
 ```bash
-SUBURB="Bondi NSW 2026"
+SUBURB="Bondi"
+STATE="NSW"
+POSTCODE="2026"
 ADDRESS="1 Example Street, Bondi NSW 2026"
 PROPERTY_TYPE="house"
 LAST_YEAR_VALUATION="2500000"
@@ -94,6 +110,8 @@ curl -s -X POST http://localhost:3000/estimate \
   -H 'Content-Type: application/json' \
   -d "{
     \"suburb\": \"$SUBURB\",
+    \"state\": \"$STATE\",
+    \"postCode\": \"$POSTCODE\",
     \"address\": \"$ADDRESS\",
     \"propertyType\": \"$PROPERTY_TYPE\",
     \"lastYearValuation\": $LAST_YEAR_VALUATION,

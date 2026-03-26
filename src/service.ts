@@ -2,6 +2,7 @@ import type { ComparableRecord, PropertyGrowthInput, PropertyGrowthResult, SiteE
 import { fetchScrapflyContent } from './scrapfly.js';
 import { saveDebugHtml } from './debug.js';
 import { extractDomain, extractProperty, extractRealestate } from './extractors.js';
+import { buildSuburbUrls } from './location.js';
 import { average, uniqueBy } from './utils.js';
 import { validateOutput } from './validation.js';
 
@@ -65,10 +66,11 @@ function determineConfidence(siteEstimates: PropertyGrowthResult['siteEstimates'
 export async function estimatePropertyGrowth(input: PropertyGrowthInput, apiKey: string): Promise<PropertyGrowthResult> {
   const errors: string[] = [];
   const assumptions: string[] = [];
+  const suburbUrls = (!input.address || !input.knownUrls) ? buildSuburbUrls(input) : null;
   const urls = {
-    realestate: input.knownUrls?.realestate ?? DEFAULT_URLS.realestate,
-    domain: input.knownUrls?.domain ?? DEFAULT_URLS.domain,
-    property: input.knownUrls?.property ?? DEFAULT_URLS.property
+    realestate: input.knownUrls?.realestate ?? suburbUrls?.realestate ?? DEFAULT_URLS.realestate,
+    domain: input.knownUrls?.domain ?? suburbUrls?.domain ?? DEFAULT_URLS.domain,
+    property: input.knownUrls?.property ?? suburbUrls?.property ?? DEFAULT_URLS.property
   };
 
   const siteEstimates = emptySiteEstimates(input);
