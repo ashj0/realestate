@@ -1,0 +1,20 @@
+{
+  "name": "suburb-only-rivervale-unit",
+  "input": {
+    "suburb": "Rivervale",
+    "state": "WA",
+    "postCode": "6103",
+    "address": "Rivervale WA 6103",
+    "propertyType": "unit",
+    "lastYearValuation": 1000000,
+    "comparableType": "sold",
+    "currency": "AUD"
+  },
+  "assertions": {
+    "expectGeneratedUrls": {
+      "realestate": "https://www.realestate.com.au/wa/rivervale-6103/",
+      "domain": "https://www.domain.com.au/suburb-profile/rivervale-wa-6103",
+      "property": "https://www.property.com.au/wa/rivervale-6103/"
+    }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "name": "address-level-bondi-house-template",
+  "input": {
+    "suburb": "Bondi",
+    "state": "NSW",
+    "postCode": "2026",
+    "address": "1 Example Street, Bondi NSW 2026",
+    "propertyType": "house",
+    "lastYearValuation": 2500000,
+    "comparableType": "sold",
+    "currency": "AUD",
+    "knownUrls": {
+      "realestate": "https://www.realestate.com.au/property-house-nsw-bondi-123456789",
+      "domain": "https://www.domain.com.au/property-profile/1-example-street-bondi-nsw-2026",
+      "property": "https://www.property.com.au/nsw/bondi-2026/example-st/1-pid-1234567/"
+    }
+  },
+  "assertions": {
+    "note": "Replace placeholder URLs with live property URLs before enabling live assertions"
+  }
+}
