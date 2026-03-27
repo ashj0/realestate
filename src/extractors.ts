@@ -35,6 +35,28 @@ function attrFromSelector($: ReturnType<typeof load>, selectors: string[], attr:
   return null;
 }
 
+function textsFromSelector($: ReturnType<typeof load>, selectors: string[]): string[] {
+  const values: string[] = [];
+
+  for (const selector of selectors) {
+    $(selector).each((_, element) => {
+      const value = normalizeWhitespace($(element).text());
+      if (value) values.push(value);
+    });
+  }
+
+  return values;
+}
+
+function maxParsedPercent(values: Array<string | null | undefined>): number | null {
+  const parsed = values
+    .map((value) => parsePercent(value))
+    .filter((value): value is number => typeof value === 'number' && Number.isFinite(value));
+
+  if (!parsed.length) return null;
+  return Math.max(...parsed);
+}
+
 function extractSoldHistoryFromText(text: string, source: SiteLabel, sourceUrl: string | null): SoldHistoryRecord[] {
   const records: SoldHistoryRecord[] = [];
   const pattern = /(\b(?:\d{4}-\d{2}-\d{2}|(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)[a-zA-Z]*\s+\d{4})\b)[^$]{0,80}(\$[\d,]+)/g;
@@ -72,7 +94,7 @@ export function extractRealestate(content: string, sourceUrl: string | null, add
   const bodyText = normalizeWhitespace($.root().text());
 
   const growthAttr = attrFromSelector($, ['[data-testid="growth-percentage"]'], 'growth');
-  const growthText = textFromSelector($, ['[data-testid="growth-percentage"]', '[class^="MedianPriceGrowth__GrowthValue"]']);
+  const growthText = textFromSelector($, ['[data-testid="growth-percentage"]', '[class*="MedianPriceGrowth__GrowthValue"]']);
   const medianText = textFromSelector($, ['[data-testid="median-price-display"]']);
   const updatedText = bodyText.match(/(?:Updated|Last updated)[:\s-]+([A-Z][a-z]{2,8}\s+\d{4})/i)?.[1] ?? null;
 
@@ -130,9 +152,9 @@ export function extractProperty(content: string, sourceUrl: string | null, addre
   const $ = load(content);
   const bodyText = normalizeWhitespace($.root().text());
 
-  const growthText = textFromSelector($, ['[class^="MedianCostBrick__TrendIndicator"]']);
+  const growthTexts = textsFromSelector($, ['[class*="CostChange__TrendIndicator"]', '[class^="MedianCostBrick__TrendIndicator"]']);
   const medianText = textFromSelector($, ['[class^="MedianCostBrick__CostValue"]']);
-  estimate.suburbGrowthPercent = parsePercent(growthText);
+  estimate.suburbGrowthPercent = maxParsedPercent(growthTexts) ?? parsePercent(textFromSelector($, ['[class^="MedianCostBrick__TrendIndicator"]']));
   estimate.medianPrice = parseNumber(medianText);
   estimate.medianPricePeriod = rollingTwelveMonthPeriod();
   estimate.propertyTypeMatched = containsUnitContext(bodyText) || /\/unit-/i.test(bodyText);
