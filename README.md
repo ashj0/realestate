@@ -9,7 +9,7 @@ Node.js/TypeScript API and CLI for the `property-growth-estimator` workflow, plu
 ```bash
 npm install
 cp .env.example .env
-# set SCRAPFLY_API_KEY in .env
+# set APIFY_PROXY_URL in .env
 npm run build
 npm start
 ```
@@ -211,6 +211,6 @@ Next step is wiring this scaffold to real search, map, and estimate APIs.
 
 ## Notes
 
-- Uses Scrapfly rendered responses instead of direct browser navigation.
+- Uses direct HTML fetches through an Apify proxy instead of direct browser navigation.
 - Output is validated against the existing JSON schemas in `property-growth-estimator/references/`.
 - Parsing is heuristic and should be tightened against real Scrapfly payloads during testing.

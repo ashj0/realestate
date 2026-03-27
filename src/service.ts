@@ -1,5 +1,5 @@
 import type { ComparableRecord, PropertyGrowthInput, PropertyGrowthResult, SiteEstimate, SiteLabel } from './types.js';
-import { fetchScrapflyContent } from './scrapfly.js';
+import { fetchViaApifyProxy } from './apifyProxy.js';
 import { saveDebugHtml } from './debug.js';
 import { extractDomain, extractProperty, extractRealestate } from './extractors.js';
 import { buildSuburbUrls } from './location.js';
@@ -63,7 +63,7 @@ function determineConfidence(siteEstimates: PropertyGrowthResult['siteEstimates'
   return 'low';
 }
 
-export async function estimatePropertyGrowth(input: PropertyGrowthInput, apiKey: string): Promise<PropertyGrowthResult> {
+export async function estimatePropertyGrowth(input: PropertyGrowthInput, proxyUrl: string): Promise<PropertyGrowthResult> {
   const errors: string[] = [];
   const assumptions: string[] = [];
   const suburbUrls = (!input.address || !input.knownUrls) ? buildSuburbUrls(input) : null;
@@ -76,19 +76,19 @@ export async function estimatePropertyGrowth(input: PropertyGrowthInput, apiKey:
   const siteEstimates = emptySiteEstimates(input);
 
   await Promise.all([
-    fetchScrapflyContent(urls.realestate, apiKey)
+    fetchViaApifyProxy(urls.realestate, proxyUrl)
       .then(async (content) => {
         await saveDebugHtml('realestate', content);
         siteEstimates.realestate_com_au = extractRealestate(content, urls.realestate, input.address);
       })
       .catch((error: Error) => errors.push(`realestate.com.au: ${error.message}`)),
-    fetchScrapflyContent(urls.domain, apiKey)
+    fetchViaApifyProxy(urls.domain, proxyUrl)
       .then(async (content) => {
         await saveDebugHtml('domain', content);
         siteEstimates.domain_com_au = extractDomain(content, urls.domain, input.address);
       })
       .catch((error: Error) => errors.push(`domain.com.au: ${error.message}`)),
-    fetchScrapflyContent(urls.property, apiKey)
+    fetchViaApifyProxy(urls.property, proxyUrl)
       .then(async (content) => {
         await saveDebugHtml('property', content);
         siteEstimates.property_com_au = extractProperty(content, urls.property, input.address);
@@ -112,7 +112,7 @@ export async function estimatePropertyGrowth(input: PropertyGrowthInput, apiKey:
     assumptions.push(`Using unit median growth (${siteEstimates.realestate_com_au.suburbGrowthPercent}%) from realestate.com.au`);
   }
 
-  const { knownUrls: _knownUrls, ...publicInput } = input;
+  const { knownUrls: _knownUrls, state: _state, postCode: _postCode, ...publicInput } = input;
 
   const output: PropertyGrowthResult = {
     input: publicInput,

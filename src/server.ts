@@ -20,14 +20,14 @@ app.post('/estimate', async (req, res) => {
     return;
   }
 
-  const apiKey = process.env.SCRAPFLY_API_KEY;
-  if (!apiKey) {
-    res.status(500).json({ errors: ['SCRAPFLY_API_KEY is not set'] });
+  const proxyUrl = process.env.APIFY_PROXY_URL;
+  if (!proxyUrl) {
+    res.status(500).json({ errors: ['APIFY_PROXY_URL is not set'] });
     return;
   }
 
   try {
-    const result = await estimatePropertyGrowth(input, apiKey);
+    const result = await estimatePropertyGrowth(input, proxyUrl);
     res.json(result);
   } catch (error) {
     res.status(500).json({ errors: [error instanceof Error ? error.message : 'Unknown error'] });
