@@ -10,6 +10,7 @@ Node.js/TypeScript API and CLI for the `property-growth-estimator` workflow, plu
 npm install
 cp .env.example .env
 # set APIFY_PROXY_URL in .env
+# optional: set FETCH_MODE=playwright for browser-backed fetches
 npm run build
 npm start
 ```
@@ -211,6 +212,6 @@ Next step is wiring this scaffold to real search, map, and estimate APIs.
 
 ## Notes
 
-- Uses direct HTML fetches through an Apify proxy instead of direct browser navigation.
+- Supports direct HTML fetches through an Apify proxy, with optional Playwright browser fetch mode behind the same proxy.
 - Output is validated against the existing JSON schemas in `property-growth-estimator/references/`.
 - Parsing is heuristic and should be tightened against real Scrapfly payloads during testing.

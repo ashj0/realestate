@@ -1,5 +1,6 @@
 import type { ComparableRecord, PropertyGrowthInput, PropertyGrowthResult, SiteEstimate, SiteLabel } from './types.js';
 import { fetchViaApifyProxy } from './apifyProxy.js';
+import { fetchWithPlaywright } from './browserFetch.js';
 import { saveDebugHtml } from './debug.js';
 import { extractDomain, extractProperty, extractRealestate } from './extractors.js';
 import { buildSuburbUrls } from './location.js';
@@ -11,6 +12,14 @@ const DEFAULT_URLS = {
   domain: 'https://www.domain.com.au/property-profile/705-60-riversdale-road-rivervale-wa-6103',
   property: 'https://www.property.com.au/wa/rivervale-6103/riversdale-rd/705-60-pid-20009700/'
 };
+
+async function fetchSiteContent(url: string, proxyUrl: string): Promise<string> {
+  const mode = process.env.FETCH_MODE ?? 'http';
+  if (mode === 'playwright') {
+    return fetchWithPlaywright(url, proxyUrl);
+  }
+  return fetchViaApifyProxy(url, proxyUrl);
+}
 
 function emptySiteEstimates(input: PropertyGrowthInput) {
   return {
@@ -76,19 +85,19 @@ export async function estimatePropertyGrowth(input: PropertyGrowthInput, proxyUr
   const siteEstimates = emptySiteEstimates(input);
 
   await Promise.all([
-    fetchViaApifyProxy(urls.realestate, proxyUrl)
+    fetchSiteContent(urls.realestate, proxyUrl)
       .then(async (content) => {
         await saveDebugHtml('realestate', content);
         siteEstimates.realestate_com_au = extractRealestate(content, urls.realestate, input.address);
       })
       .catch((error: Error) => errors.push(`realestate.com.au: ${error.message}`)),
-    fetchViaApifyProxy(urls.domain, proxyUrl)
+    fetchSiteContent(urls.domain, proxyUrl)
       .then(async (content) => {
         await saveDebugHtml('domain', content);
         siteEstimates.domain_com_au = extractDomain(content, urls.domain, input.address);
       })
       .catch((error: Error) => errors.push(`domain.com.au: ${error.message}`)),
-    fetchViaApifyProxy(urls.property, proxyUrl)
+    fetchSiteContent(urls.property, proxyUrl)
       .then(async (content) => {
         await saveDebugHtml('property', content);
         siteEstimates.property_com_au = extractProperty(content, urls.property, input.address);
