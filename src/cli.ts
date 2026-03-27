@@ -17,13 +17,13 @@ async function main() {
     process.exit(1);
   }
 
-  const proxyUrl = process.env.APIFY_PROXY_URL;
-  if (!proxyUrl) {
-    console.error(JSON.stringify({ errors: ['APIFY_PROXY_URL is not set'] }, null, 2));
+  const apiKey = process.env.SCRAPFLY_API_KEY;
+  if (!apiKey) {
+    console.error(JSON.stringify({ errors: ['SCRAPFLY_API_KEY is not set'] }, null, 2));
     process.exit(1);
   }
 
-  const result = await estimatePropertyGrowth(input, proxyUrl);
+  const result = await estimatePropertyGrowth(input, '');
   console.log(JSON.stringify(result, null, 2));
 }
 
