@@ -1,8 +1,10 @@
 import { useMemo, useState } from 'react';
 import ApartmentRoundedIcon from '@mui/icons-material/ApartmentRounded';
 import {
+  Alert,
   Box,
   Button,
+  CircularProgress,
   Container,
   Grid,
   Stack,
@@ -14,16 +16,64 @@ import { SelectedSuburbCard } from './components/SelectedSuburbCard';
 import { ValuationForm } from './components/ValuationForm';
 import { EstimateSummaryCard } from './components/EstimateSummaryCard';
 import { SourceEstimateList } from './components/SourceEstimateList';
-import { mockValuationResult, suburbOptions, type SuburbOption } from './data/mockData';
+import { propertyOptions } from './data/mockData';
+import type { EstimateApiResponse, PropertyOption } from './types';
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000';
 
 export default function App() {
-  const [selectedSuburb, setSelectedSuburb] = useState<SuburbOption | null>(suburbOptions[0]);
+  const [selectedProperty, setSelectedProperty] = useState<PropertyOption | null>(propertyOptions[0]);
   const [lastYearValuation, setLastYearValuation] = useState('1850000');
-  const [showResults, setShowResults] = useState(true);
+  const [showMap, setShowMap] = useState(false);
+  const [result, setResult] = useState<EstimateApiResponse | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const canGenerate = useMemo(() => {
-    return Boolean(selectedSuburb && Number(lastYearValuation) > 0);
-  }, [selectedSuburb, lastYearValuation]);
+    return Boolean(selectedProperty && Number(lastYearValuation) > 0);
+  }, [selectedProperty, lastYearValuation]);
+
+  async function handleGenerateEstimate() {
+    if (!selectedProperty || Number(lastYearValuation) <= 0) {
+      setError('Select a property and enter a valid valuation first.');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/estimate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          suburb: selectedProperty.suburb,
+          address: selectedProperty.address,
+          state: selectedProperty.state,
+          postCode: selectedProperty.postcode,
+          propertyType: selectedProperty.propertyType,
+          lastYearValuation: Number(lastYearValuation),
+          comparableType: 'sold',
+          currency: 'AUD',
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.errors?.join(' · ') ?? 'Failed to fetch estimate');
+      }
+
+      setResult(data as EstimateApiResponse);
+    } catch (caughtError) {
+      setResult(null);
+      setError(caughtError instanceof Error ? caughtError.message : 'Failed to fetch estimate');
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <Box
@@ -42,11 +92,14 @@ export default function App() {
             <Grid size={{ xs: 12, lg: 8 }}>
               <Stack spacing={3}>
                 <SearchPanel
-                  options={suburbOptions}
-                  selected={selectedSuburb}
-                  onChange={setSelectedSuburb}
+                  options={propertyOptions}
+                  selected={selectedProperty}
+                  onChange={setSelectedProperty}
+                  mapOpen={showMap}
+                  onMapOpen={() => setShowMap(true)}
+                  onMapClose={() => setShowMap(false)}
                 />
-                <SelectedSuburbCard suburb={selectedSuburb} />
+                <SelectedSuburbCard property={selectedProperty} />
               </Stack>
             </Grid>
 
@@ -55,8 +108,8 @@ export default function App() {
                 <ValuationForm
                   valuation={lastYearValuation}
                   onChange={setLastYearValuation}
-                  disabled={!canGenerate}
-                  onSubmit={() => setShowResults(true)}
+                  disabled={!canGenerate || loading}
+                  onSubmit={handleGenerateEstimate}
                 />
                 <Box
                   sx={{
@@ -68,14 +121,14 @@ export default function App() {
                 >
                   <Stack spacing={1.5}>
                     <Typography variant="subtitle2" color="text.secondary">
-                      Ready for the next step
+                      What happens next
                     </Typography>
                     <Typography variant="h6">
-                      This scaffold is set up for a real search API, map picker, and backend estimate
-                      endpoint.
+                      Once a property is selected, the app sends the suburb and property type to the API
+                      and returns growth data from realestate.com.au, Domain, and property.com.au.
                     </Typography>
                     <Button startIcon={<ApartmentRoundedIcon />} variant="text" sx={{ px: 0, alignSelf: 'flex-start' }}>
-                      Replace mock data next
+                      Backend wired to /estimate
                     </Button>
                   </Stack>
                 </Box>
@@ -83,13 +136,21 @@ export default function App() {
             </Grid>
           </Grid>
 
-          {showResults ? (
+          {loading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+              <CircularProgress />
+            </Box>
+          ) : null}
+
+          {error ? <Alert severity="error">{error}</Alert> : null}
+
+          {result ? (
             <Grid container spacing={3}>
               <Grid size={{ xs: 12, lg: 5 }}>
-                <EstimateSummaryCard result={mockValuationResult} />
+                <EstimateSummaryCard result={result} />
               </Grid>
               <Grid size={{ xs: 12, lg: 7 }}>
-                <SourceEstimateList sources={mockValuationResult.sources} />
+                <SourceEstimateList siteEstimates={result.siteEstimates} />
               </Grid>
             </Grid>
           ) : null}

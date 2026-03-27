@@ -1,51 +1,64 @@
-export interface SuburbOption {
-  suburb: string;
-  state: string;
-  postcode: string;
-}
+import type { PropertyOption } from '../types';
 
-export interface SourceEstimate {
-  siteName: string;
-  estimate: number;
-  url: string;
-}
-
-export interface ValuationResult {
-  finalEstimate: number;
-  growthPercent: number;
-  confidenceLabel: 'Low' | 'Medium' | 'High';
-  confidenceScore: number;
-  sources: SourceEstimate[];
-}
-
-export const suburbOptions: SuburbOption[] = [
-  { suburb: 'Bondi', state: 'NSW', postcode: '2026' },
-  { suburb: 'New Farm', state: 'QLD', postcode: '4005' },
-  { suburb: 'Richmond', state: 'VIC', postcode: '3121' },
-  { suburb: 'Subiaco', state: 'WA', postcode: '6008' },
-  { suburb: 'Unley', state: 'SA', postcode: '5061' },
+export const propertyOptions: PropertyOption[] = [
+  {
+    id: 'bondi-101',
+    address: '101 Campbell Parade, Bondi NSW 2026',
+    suburb: 'Bondi',
+    state: 'NSW',
+    postcode: '2026',
+    propertyType: 'unit',
+    lat: -33.8918,
+    lng: 151.2767,
+  },
+  {
+    id: 'bondi-18',
+    address: '18 Hall Street, Bondi NSW 2026',
+    suburb: 'Bondi',
+    state: 'NSW',
+    postcode: '2026',
+    propertyType: 'house',
+    lat: -33.891,
+    lng: 151.2742,
+  },
+  {
+    id: 'newfarm-42',
+    address: '42 Merthyr Road, New Farm QLD 4005',
+    suburb: 'New Farm',
+    state: 'QLD',
+    postcode: '4005',
+    propertyType: 'house',
+    lat: -27.4677,
+    lng: 153.0465,
+  },
+  {
+    id: 'richmond-7',
+    address: '7 Rowena Parade, Richmond VIC 3121',
+    suburb: 'Richmond',
+    state: 'VIC',
+    postcode: '3121',
+    propertyType: 'unit',
+    lat: -37.8214,
+    lng: 145.0016,
+  },
+  {
+    id: 'subiaco-55',
+    address: '55 Rokeby Road, Subiaco WA 6008',
+    suburb: 'Subiaco',
+    state: 'WA',
+    postcode: '6008',
+    propertyType: 'house',
+    lat: -31.9488,
+    lng: 115.8247,
+  },
+  {
+    id: 'unley-12',
+    address: '12 King William Road, Unley SA 5061',
+    suburb: 'Unley',
+    state: 'SA',
+    postcode: '5061',
+    propertyType: 'house',
+    lat: -34.9534,
+    lng: 138.6072,
+  },
 ];
-
-export const mockValuationResult: ValuationResult = {
-  finalEstimate: 1942500,
-  growthPercent: 5,
-  confidenceLabel: 'High',
-  confidenceScore: 78,
-  sources: [
-    {
-      siteName: 'Realestate.com.au',
-      estimate: 1930000,
-      url: 'https://www.realestate.com.au/',
-    },
-    {
-      siteName: 'Domain',
-      estimate: 1955000,
-      url: 'https://www.domain.com.au/',
-    },
-    {
-      siteName: 'Property.com.au',
-      estimate: 1940000,
-      url: 'https://www.property.com.au/',
-    },
-  ],
-};

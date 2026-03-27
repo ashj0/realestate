@@ -1,29 +1,34 @@
 import LocationOnRoundedIcon from '@mui/icons-material/LocationOnRounded';
+import HomeWorkRoundedIcon from '@mui/icons-material/HomeWorkRounded';
 import { Chip, Paper, Stack, Typography } from '@mui/material';
-import type { SuburbOption } from '../data/mockData';
+import type { PropertyOption } from '../types';
 
 interface SelectedSuburbCardProps {
-  suburb: SuburbOption | null;
+  property: PropertyOption | null;
 }
 
-export function SelectedSuburbCard({ suburb }: SelectedSuburbCardProps) {
+export function SelectedSuburbCard({ property }: SelectedSuburbCardProps) {
   return (
     <Paper sx={{ p: 3 }}>
       <Stack spacing={2}>
         <Stack direction="row" spacing={1} alignItems="center">
           <LocationOnRoundedIcon color="primary" />
-          <Typography variant="h6">Selected suburb</Typography>
+          <Typography variant="h6">Selected property</Typography>
         </Stack>
 
-        {suburb ? (
-          <Stack direction="row" spacing={1.5} flexWrap="wrap" useFlexGap>
-            <Chip label={suburb.suburb} color="primary" />
-            <Chip label={suburb.state} variant="outlined" />
-            <Chip label={suburb.postcode} variant="outlined" />
-          </Stack>
+        {property ? (
+          <>
+            <Typography variant="h5">{property.address}</Typography>
+            <Stack direction="row" spacing={1.5} flexWrap="wrap" useFlexGap>
+              <Chip label={property.suburb} color="primary" />
+              <Chip label={property.state} variant="outlined" />
+              <Chip label={property.postcode} variant="outlined" />
+              <Chip icon={<HomeWorkRoundedIcon />} label={property.propertyType} variant="outlined" />
+            </Stack>
+          </>
         ) : (
           <Typography color="text.secondary">
-            No suburb selected yet. Choose one from search to continue.
+            No property selected yet. Choose one from the search box or map to continue.
           </Typography>
         )}
       </Stack>
