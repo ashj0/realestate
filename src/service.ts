@@ -1,9 +1,8 @@
 import type { ComparableRecord, PropertyGrowthInput, PropertyGrowthResult, SiteEstimate, SiteLabel } from './types.js';
-import { fetchViaApifyProxy } from './apifyProxy.js';
-import { fetchWithPlaywright } from './browserFetch.js';
 import { saveDebugHtml } from './debug.js';
 import { extractDomain, extractProperty, extractRealestate } from './extractors.js';
 import { buildSuburbUrls } from './location.js';
+import { fetchScrapflyContent } from './scrapfly.js';
 import { average, uniqueBy } from './utils.js';
 import { validateOutput } from './validation.js';
 
@@ -12,14 +11,6 @@ const DEFAULT_URLS = {
   domain: 'https://www.domain.com.au/property-profile/705-60-riversdale-road-rivervale-wa-6103',
   property: 'https://www.property.com.au/wa/rivervale-6103/riversdale-rd/705-60-pid-20009700/'
 };
-
-async function fetchSiteContent(url: string, proxyUrl: string): Promise<string> {
-  const mode = process.env.FETCH_MODE ?? 'http';
-  if (mode === 'playwright') {
-    return fetchWithPlaywright(url, proxyUrl);
-  }
-  return fetchViaApifyProxy(url, proxyUrl);
-}
 
 function emptySiteEstimates(input: PropertyGrowthInput) {
   return {
@@ -72,7 +63,7 @@ function determineConfidence(siteEstimates: PropertyGrowthResult['siteEstimates'
   return 'low';
 }
 
-export async function estimatePropertyGrowth(input: PropertyGrowthInput, proxyUrl: string): Promise<PropertyGrowthResult> {
+export async function estimatePropertyGrowth(input: PropertyGrowthInput, _proxyUrl: string): Promise<PropertyGrowthResult> {
   const errors: string[] = [];
   const assumptions: string[] = [];
   const suburbUrls = (!input.address || !input.knownUrls) ? buildSuburbUrls(input) : null;
@@ -84,20 +75,26 @@ export async function estimatePropertyGrowth(input: PropertyGrowthInput, proxyUr
 
   const siteEstimates = emptySiteEstimates(input);
 
+  const apiKey = process.env.SCRAPFLY_API_KEY;
+
+  if (!apiKey) {
+    throw new Error('SCRAPFLY_API_KEY environment variable is required');
+  }
+
   await Promise.all([
-    fetchSiteContent(urls.realestate, proxyUrl)
+    fetchScrapflyContent(urls.realestate, apiKey)
       .then(async (content) => {
         await saveDebugHtml('realestate', content);
         siteEstimates.realestate_com_au = extractRealestate(content, urls.realestate, input.address);
       })
       .catch((error: Error) => errors.push(`realestate.com.au: ${error.message}`)),
-    fetchSiteContent(urls.domain, proxyUrl)
+    fetchScrapflyContent(urls.domain, apiKey)
       .then(async (content) => {
         await saveDebugHtml('domain', content);
         siteEstimates.domain_com_au = extractDomain(content, urls.domain, input.address);
       })
       .catch((error: Error) => errors.push(`domain.com.au: ${error.message}`)),
-    fetchSiteContent(urls.property, proxyUrl)
+    fetchScrapflyContent(urls.property, apiKey)
       .then(async (content) => {
         await saveDebugHtml('property', content);
         siteEstimates.property_com_au = extractProperty(content, urls.property, input.address);
