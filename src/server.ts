@@ -11,6 +11,23 @@ app.get('/health', (_req, res) => {
   res.json({ ok: true });
 });
 
+app.get('/property-autocomplete', async (req, res) => {
+  const query = typeof req.query.q === 'string' ? req.query.q : '';
+
+  if (query.trim().length < 3) {
+    res.json([]);
+    return;
+  }
+
+  try {
+    const { searchPropertyAutocomplete } = await import('./autocomplete.js');
+    const results = await searchPropertyAutocomplete(query);
+    res.json(results);
+  } catch (error) {
+    res.status(500).json({ errors: [error instanceof Error ? error.message : 'Unknown error'] });
+  }
+});
+
 app.post('/estimate', async (req, res) => {
   const input = applyInputDefaults(req.body ?? {});
   const validation = validateInput(input);

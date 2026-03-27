@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useState } from 'react';
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
 import HomeWorkRoundedIcon from '@mui/icons-material/HomeWorkRounded';
 import PlaceRoundedIcon from '@mui/icons-material/PlaceRounded';
@@ -6,6 +7,7 @@ import {
   Autocomplete,
   Box,
   Chip,
+  CircularProgress,
   Dialog,
   DialogContent,
   DialogTitle,
@@ -17,7 +19,7 @@ import {
   Typography,
 } from '@mui/material';
 import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
-import type { PropertyOption } from '../types';
+import type { PropertyAutocompleteOption, PropertyOption } from '../types';
 
 interface SearchPanelProps {
   options: PropertyOption[];
@@ -26,6 +28,7 @@ interface SearchPanelProps {
   mapOpen: boolean;
   onMapOpen: () => void;
   onMapClose: () => void;
+  apiBaseUrl: string;
 }
 
 function PropertyMapDialog({
@@ -132,7 +135,55 @@ function PropertyMapDialog({
   );
 }
 
-export function SearchPanel({ options, selected, onChange, mapOpen, onMapOpen, onMapClose }: SearchPanelProps) {
+export function SearchPanel({ options, selected, onChange, mapOpen, onMapOpen, onMapClose, apiBaseUrl }: SearchPanelProps) {
+  const [searchText, setSearchText] = useState(selected?.address ?? '');
+  const [autocompleteOptions, setAutocompleteOptions] = useState<PropertyAutocompleteOption[]>(selected ? [selected] : []);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setSearchText(selected?.address ?? '');
+    setAutocompleteOptions((current) => {
+      if (!selected) return current;
+      const next = [selected, ...current.filter((option) => option.id !== selected.id)];
+      return next.slice(0, 8);
+    });
+  }, [selected]);
+
+  useEffect(() => {
+    const query = searchText.trim();
+    if (query.length < 3) {
+      setAutocompleteOptions(selected ? [selected] : []);
+      setLoading(false);
+      return;
+    }
+
+    const timeoutId = window.setTimeout(async () => {
+      setLoading(true);
+
+      try {
+        const response = await fetch(`${apiBaseUrl}/property-autocomplete?q=${encodeURIComponent(query)}`);
+        const data = (await response.json()) as PropertyAutocompleteOption[];
+        const next = selected ? [selected, ...data.filter((option) => option.id !== selected.id)] : data;
+        setAutocompleteOptions(next);
+      } catch {
+        setAutocompleteOptions(selected ? [selected] : []);
+      } finally {
+        setLoading(false);
+      }
+    }, 300);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [apiBaseUrl, searchText, selected]);
+
+  const mapOptions = useMemo(() => {
+    const lookup = new Map<string, PropertyOption>();
+    for (const option of options) lookup.set(option.id, option);
+    for (const option of autocompleteOptions) lookup.set(option.id, option);
+    return Array.from(lookup.values());
+  }, [options, autocompleteOptions]);
+
   return (
     <>
       <Paper sx={{ p: 3.5 }}>
@@ -143,34 +194,29 @@ export function SearchPanel({ options, selected, onChange, mapOpen, onMapOpen, o
                 Search for a property
               </Typography>
               <Typography color="text.secondary">
-                Type an address and pick from the dropdown, or choose the property directly on the map.
+                Type an address and pick from the live dropdown, or choose the property directly on the map.
               </Typography>
             </Box>
-            <Chip
-              icon={<MapRoundedIcon />}
-              label="Map enabled"
-              color="primary"
-              variant="outlined"
-            />
+            <Chip icon={<MapRoundedIcon />} label="Map enabled" color="primary" variant="outlined" />
           </Stack>
 
           <Autocomplete
-            options={options}
+            filterOptions={(items) => items}
+            options={autocompleteOptions}
             value={selected}
+            inputValue={searchText}
+            onInputChange={(_, value) => setSearchText(value)}
             onChange={(_, value) => onChange(value)}
             getOptionLabel={(option) => option.address}
+            isOptionEqualToValue={(option, value) => option.id === value.id}
+            noOptionsText={searchText.trim().length < 3 ? 'Type at least 3 characters' : 'No matching properties found'}
             renderOption={(props, option) => (
               <Box component="li" {...props}>
                 <Stack spacing={0.5} py={0.5}>
                   <Typography fontWeight={700}>{option.address}</Typography>
                   <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
                     <Chip size="small" label={`${option.suburb}, ${option.state} ${option.postcode}`} />
-                    <Chip
-                      size="small"
-                      variant="outlined"
-                      icon={<HomeWorkRoundedIcon />}
-                      label={option.propertyType}
-                    />
+                    <Chip size="small" variant="outlined" icon={<HomeWorkRoundedIcon />} label={option.propertyType} />
                   </Stack>
                 </Stack>
               </Box>
@@ -186,6 +232,12 @@ export function SearchPanel({ options, selected, onChange, mapOpen, onMapOpen, o
                     <InputAdornment position="start">
                       <SearchRoundedIcon />
                     </InputAdornment>
+                  ),
+                  endAdornment: (
+                    <>
+                      {loading ? <CircularProgress color="inherit" size={18} /> : null}
+                      {params.InputProps.endAdornment}
+                    </>
                   ),
                 }}
               />
@@ -208,7 +260,7 @@ export function SearchPanel({ options, selected, onChange, mapOpen, onMapOpen, o
               <Box>
                 <Typography fontWeight={700}>Open map picker</Typography>
                 <Typography color="text.secondary">
-                  Click here to choose one of the available properties from the visual map selector.
+                  Click here to choose one of the currently available properties from the visual map selector.
                 </Typography>
               </Box>
             </Stack>
@@ -218,7 +270,7 @@ export function SearchPanel({ options, selected, onChange, mapOpen, onMapOpen, o
 
       <PropertyMapDialog
         open={mapOpen}
-        options={options}
+        options={mapOptions}
         selected={selected}
         onClose={onMapClose}
         onSelect={onChange}

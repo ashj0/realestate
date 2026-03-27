@@ -9,6 +9,8 @@ export interface PropertyOption {
   lng: number;
 }
 
+export type PropertyAutocompleteOption = PropertyOption;
+
 export interface EstimateApiResponse {
   input: {
     suburb: string;

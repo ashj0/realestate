@@ -98,6 +98,7 @@ export default function App() {
                   mapOpen={showMap}
                   onMapOpen={() => setShowMap(true)}
                   onMapClose={() => setShowMap(false)}
+                  apiBaseUrl={API_BASE_URL}
                 />
                 <SelectedSuburbCard property={selectedProperty} />
               </Stack>
