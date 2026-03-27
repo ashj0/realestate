@@ -11,7 +11,7 @@ app.get('/health', (_req, res) => {
   res.json({ ok: true });
 });
 
-app.get('/property-autocomplete', async (req, res) => {
+async function handlePropertyAutocomplete(req: express.Request, res: express.Response) {
   const query = typeof req.query.q === 'string' ? req.query.q : '';
 
   if (query.trim().length < 3) {
@@ -26,9 +26,9 @@ app.get('/property-autocomplete', async (req, res) => {
   } catch (error) {
     res.status(500).json({ errors: [error instanceof Error ? error.message : 'Unknown error'] });
   }
-});
+}
 
-app.post('/estimate', async (req, res) => {
+async function handleEstimate(req: express.Request, res: express.Response) {
   const input = applyInputDefaults(req.body ?? {});
   const validation = validateInput(input);
 
@@ -49,7 +49,13 @@ app.post('/estimate', async (req, res) => {
   } catch (error) {
     res.status(500).json({ errors: [error instanceof Error ? error.message : 'Unknown error'] });
   }
-});
+}
+
+app.get('/property-autocomplete', handlePropertyAutocomplete);
+app.get('/api/property-autocomplete', handlePropertyAutocomplete);
+
+app.post('/estimate', handleEstimate);
+app.post('/api/estimate', handleEstimate);
 
 const port = Number(process.env.PORT ?? 3000);
 app.listen(port, () => {
