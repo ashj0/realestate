@@ -48,13 +48,13 @@ function textsFromSelector($: ReturnType<typeof load>, selectors: string[]): str
   return values;
 }
 
-function maxParsedPercent(values: Array<string | null | undefined>): number | null {
-  const parsed = values
-    .map((value) => parsePercent(value))
-    .filter((value): value is number => typeof value === 'number' && Number.isFinite(value));
+function firstParsedPercent(values: Array<string | null | undefined>): number | null {
+  for (const value of values) {
+    const parsed = parsePercent(value);
+    if (typeof parsed === 'number' && Number.isFinite(parsed)) return parsed;
+  }
 
-  if (!parsed.length) return null;
-  return Math.max(...parsed);
+  return null;
 }
 
 function extractSoldHistoryFromText(text: string, source: SiteLabel, sourceUrl: string | null): SoldHistoryRecord[] {
@@ -154,7 +154,7 @@ export function extractProperty(content: string, sourceUrl: string | null, addre
 
   const growthTexts = textsFromSelector($, ['[class*="CostChange__TrendIndicator"]', '[class^="MedianCostBrick__TrendIndicator"]']);
   const medianText = textFromSelector($, ['[class^="MedianCostBrick__CostValue"]']);
-  estimate.suburbGrowthPercent = maxParsedPercent(growthTexts) ?? parsePercent(textFromSelector($, ['[class^="MedianCostBrick__TrendIndicator"]']));
+  estimate.suburbGrowthPercent = firstParsedPercent(growthTexts) ?? parsePercent(textFromSelector($, ['[class^="MedianCostBrick__TrendIndicator"]']));
   estimate.medianPrice = parseNumber(medianText);
   estimate.medianPricePeriod = rollingTwelveMonthPeriod();
   estimate.propertyTypeMatched = containsUnitContext(bodyText) || /\/unit-/i.test(bodyText);

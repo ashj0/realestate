@@ -66,7 +66,7 @@ function determineConfidence(siteEstimates: PropertyGrowthResult['siteEstimates'
 export async function estimatePropertyGrowth(input: PropertyGrowthInput, _proxyUrl: string): Promise<PropertyGrowthResult> {
   const errors: string[] = [];
   const assumptions: string[] = [];
-  const suburbUrls = (!input.address || !input.knownUrls) ? buildSuburbUrls(input) : null;
+  const suburbUrls = buildSuburbUrls(input);
   const urls = {
     realestate: input.knownUrls?.realestate ?? suburbUrls?.realestate ?? DEFAULT_URLS.realestate,
     domain: input.knownUrls?.domain ?? suburbUrls?.domain ?? DEFAULT_URLS.domain,
@@ -116,6 +116,10 @@ export async function estimatePropertyGrowth(input: PropertyGrowthInput, _proxyU
 
   if (siteEstimates.realestate_com_au.suburbGrowthPercent !== null && siteEstimates.realestate_com_au.propertyTypeMatched) {
     assumptions.push(`Using unit median growth (${siteEstimates.realestate_com_au.suburbGrowthPercent}%) from realestate.com.au`);
+  }
+
+  if (siteEstimates.property_com_au.suburbGrowthPercent !== null && siteEstimates.property_com_au.propertyTypeMatched) {
+    assumptions.push(`Using unit median growth (${siteEstimates.property_com_au.suburbGrowthPercent}%) from property.com.au`);
   }
 
   const { knownUrls: _knownUrls, state: _state, postCode: _postCode, ...publicInput } = input;
