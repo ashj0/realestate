@@ -139,17 +139,15 @@ export default function App() {
                 alignItems: 'start',
               }}
             >
-              <Box sx={{ minWidth: 0 }}>
+              <Stack spacing={2} sx={{ minWidth: 0 }}>
                 <EstimateSummaryCard result={result} principal={Number(principal) || 0} />
-              </Box>
-              <Box sx={{ minWidth: 0, alignSelf: 'start' }}>
-                <SourceBreakdown siteEstimates={result.siteEstimates} />
-              </Box>
-              <Box sx={{ minWidth: 0 }}>
                 <SourceEstimateList
                   siteEstimates={result.siteEstimates}
                   selectedComparables={result.selectedComparables}
                 />
+              </Stack>
+              <Box sx={{ minWidth: 0, alignSelf: 'start' }}>
+                <SourceBreakdown siteEstimates={result.siteEstimates} />
               </Box>
             </Box>
           ) : null}
