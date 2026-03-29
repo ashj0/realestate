@@ -15,6 +15,7 @@ import { SourceBreakdown } from './components/SourceBreakdown';
 import { SourceEstimateList } from './components/SourceEstimateList';
 import { OtpScenarioForm } from './components/OtpScenarioForm';
 import { OtpForecastSummaryCard } from './components/OtpForecastSummaryCard';
+import { StrategyOutcomeCard } from './components/StrategyOutcomeCard';
 import { propertyOptions } from './data/mockData';
 import type { EstimateApiResponse, PropertyOption } from './types';
 
@@ -48,6 +49,43 @@ export default function App() {
     const sellingCosts = currentValuation * ((Number(sellingCostPercent) || 0) / 100);
     return currentValuation - (Number(loanBalance) || 0) - sellingCosts;
   }, [result, loanBalance, sellingCostPercent]);
+
+  const otpScenario = useMemo(() => {
+    const purchasePrice = Number(otpPurchasePrice) || 0;
+    const propertyCount = Number(otpPropertyCount) || 0;
+    const depositPercent = Number(otpDepositPercent) || 0;
+    const actualUpfrontCashPerProperty = Number(otpActualUpfrontCash) || 0;
+    const annualGrowthPercent = Number(otpAnnualGrowthPercent) || 0;
+    const yearsToCompletion = Number(otpYearsToCompletion) || 0;
+    const depositAmount = purchasePrice * (depositPercent / 100);
+    const actualUpfrontCash = useDepositBond ? actualUpfrontCashPerProperty : depositAmount;
+    const forecastCompletionValue = purchasePrice * Math.pow(1 + annualGrowthPercent / 100, yearsToCompletion);
+    const forecastEquityGainPerProperty = forecastCompletionValue - purchasePrice;
+    const totalUpfrontCashNeeded = actualUpfrontCash * propertyCount;
+    const totalProjectedGain = forecastEquityGainPerProperty * propertyCount;
+    const fundingSurplusShortfall = netDeployableEquity === null ? null : netDeployableEquity - totalUpfrontCashNeeded;
+
+    return {
+      purchasePrice,
+      propertyCount,
+      depositPercent,
+      actualUpfrontCashPerProperty,
+      annualGrowthPercent,
+      yearsToCompletion,
+      totalUpfrontCashNeeded,
+      totalProjectedGain,
+      fundingSurplusShortfall,
+    };
+  }, [
+    otpPurchasePrice,
+    otpPropertyCount,
+    otpDepositPercent,
+    otpActualUpfrontCash,
+    otpAnnualGrowthPercent,
+    otpYearsToCompletion,
+    useDepositBond,
+    netDeployableEquity,
+  ]);
 
   async function handleGenerateEstimate() {
     if (!selectedProperty || Number(lastYearValuation) <= 0 || Number(loanBalance) < 0 || Number(sellingCostPercent) < 0) {
@@ -196,16 +234,28 @@ export default function App() {
                   onYearsToCompletionChange={setOtpYearsToCompletion}
                 />
                 <OtpForecastSummaryCard
-                  purchasePrice={Number(otpPurchasePrice) || 0}
-                  propertyCount={Number(otpPropertyCount) || 0}
-                  depositPercent={Number(otpDepositPercent) || 0}
+                  purchasePrice={otpScenario.purchasePrice}
+                  propertyCount={otpScenario.propertyCount}
+                  depositPercent={otpScenario.depositPercent}
                   useDepositBond={useDepositBond}
-                  actualUpfrontCashPerProperty={Number(otpActualUpfrontCash) || 0}
-                  annualGrowthPercent={Number(otpAnnualGrowthPercent) || 0}
-                  yearsToCompletion={Number(otpYearsToCompletion) || 0}
+                  actualUpfrontCashPerProperty={otpScenario.actualUpfrontCashPerProperty}
+                  annualGrowthPercent={otpScenario.annualGrowthPercent}
+                  yearsToCompletion={otpScenario.yearsToCompletion}
                   netDeployableEquity={netDeployableEquity}
                 />
               </Box>
+
+              <StrategyOutcomeCard
+                valuationConfidence={result.confidence}
+                growthPercent={result.result.growthPercent}
+                netDeployableEquity={netDeployableEquity}
+                totalProjectedGain={otpScenario.totalProjectedGain}
+                totalUpfrontCashNeeded={otpScenario.totalUpfrontCashNeeded}
+                fundingSurplusShortfall={otpScenario.fundingSurplusShortfall}
+                useDepositBond={useDepositBond}
+                propertyCount={otpScenario.propertyCount}
+                annualGrowthPercent={otpScenario.annualGrowthPercent}
+              />
 
               <Box sx={{ width: '100%' }}>
                 <SourceEstimateList
