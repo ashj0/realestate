@@ -2,12 +2,13 @@ import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
 import ErrorOutlineRoundedIcon from '@mui/icons-material/ErrorOutlineRounded';
 import InsightsRoundedIcon from '@mui/icons-material/InsightsRounded';
 import PauseCircleRoundedIcon from '@mui/icons-material/PauseCircleRounded';
-import { Alert, Chip, Paper, Stack, Typography } from '@mui/material';
+import { Alert, Chip, Grid, Paper, Stack, Typography } from '@mui/material';
 import { formatCurrency, formatPercent } from '../utils';
 
 interface StrategyOutcomeCardProps {
   valuationConfidence: 'low' | 'medium' | 'high';
   growthPercent: number | null;
+  currentValuation: number | null;
   netDeployableEquity: number | null;
   totalProjectedGain: number;
   totalUpfrontCashNeeded: number;
@@ -19,13 +20,10 @@ interface StrategyOutcomeCardProps {
 
 function buildRecommendation(props: StrategyOutcomeCardProps) {
   const {
-    valuationConfidence,
-    growthPercent,
     netDeployableEquity,
     totalProjectedGain,
     totalUpfrontCashNeeded,
     fundingSurplusShortfall,
-    useDepositBond,
     propertyCount,
     annualGrowthPercent,
   } = props;
@@ -69,12 +67,26 @@ export function StrategyOutcomeCard(props: StrategyOutcomeCardProps) {
   const recommendation = buildRecommendation(props);
   const warnings: string[] = [];
 
+  const keepPropertyValueIn3Years =
+    props.currentValuation === null || props.growthPercent === null
+      ? null
+      : props.currentValuation * Math.pow(1 + props.growthPercent / 100, 3);
+
+  const keepPropertyGainIn3Years =
+    keepPropertyValueIn3Years === null || props.currentValuation === null
+      ? null
+      : keepPropertyValueIn3Years - props.currentValuation;
+
+  const sellAndBuyOutcomeIn3Years = props.totalProjectedGain;
+  const strategyDifference =
+    keepPropertyGainIn3Years === null ? null : sellAndBuyOutcomeIn3Years - keepPropertyGainIn3Years;
+
   if (props.valuationConfidence === 'low') {
     warnings.push('Valuation confidence is low, so current value and deployable equity may move materially.');
   }
 
   if (props.growthPercent === null) {
-    warnings.push('Current property growth estimate is unavailable, so the sell-side case is less reliable.');
+    warnings.push('Current property growth estimate is unavailable, so the keep-vs-sell comparison is less reliable.');
   }
 
   if (props.useDepositBond) {
@@ -95,13 +107,55 @@ export function StrategyOutcomeCard(props: StrategyOutcomeCardProps) {
         <Stack spacing={1}>
           <Typography variant="h5">Strategy outcome</Typography>
           <Typography color="text.secondary">
-            Plain-English guidance on whether the current equity position appears suitable for the modeled off-the-plan redeployment plan.
+            Compare the 3-year outcome of keeping the current property versus selling and redeploying into {props.propertyCount} off-the-plan properties.
           </Typography>
         </Stack>
 
         <Chip icon={recommendation.icon} label={recommendation.label} color={recommendation.color} sx={{ width: 'fit-content' }} />
 
         <Typography>{recommendation.summary}</Typography>
+
+        <Grid container spacing={2}>
+          <Grid size={{ xs: 12, md: 4 }}>
+            <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 4, height: '100%' }}>
+              <Stack spacing={1}>
+                <Typography color="text.secondary">Keep current property for 3 years</Typography>
+                <Typography variant="h5">
+                  {keepPropertyGainIn3Years === null ? 'Unavailable' : formatCurrency(keepPropertyGainIn3Years)}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {props.growthPercent === null ? 'Current property growth unavailable' : `${formatPercent(props.growthPercent)} annual growth assumption`}
+                </Typography>
+              </Stack>
+            </Paper>
+          </Grid>
+          <Grid size={{ xs: 12, md: 4 }}>
+            <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 4, height: '100%' }}>
+              <Stack spacing={1}>
+                <Typography color="text.secondary">Sell and buy {props.propertyCount} OTP properties</Typography>
+                <Typography variant="h5" sx={{ color: props.totalProjectedGain > 0 ? 'success.main' : 'text.primary' }}>
+                  {formatCurrency(props.totalProjectedGain)}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Projected 3-year modeled gain across new properties
+                </Typography>
+              </Stack>
+            </Paper>
+          </Grid>
+          <Grid size={{ xs: 12, md: 4 }}>
+            <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 4, height: '100%' }}>
+              <Stack spacing={1}>
+                <Typography color="text.secondary">Difference</Typography>
+                <Typography variant="h5" sx={{ color: strategyDifference !== null && strategyDifference > 0 ? 'success.main' : 'text.primary' }}>
+                  {strategyDifference === null ? 'Unavailable' : formatCurrency(strategyDifference)}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  OTP strategy minus keeping current property
+                </Typography>
+              </Stack>
+            </Paper>
+          </Grid>
+        </Grid>
 
         <Stack spacing={1}>
           <Typography variant="subtitle2" color="text.secondary">

@@ -248,6 +248,7 @@ export default function App() {
               <StrategyOutcomeCard
                 valuationConfidence={result.confidence}
                 growthPercent={result.result.growthPercent}
+                currentValuation={result.result.currentValuation}
                 netDeployableEquity={netDeployableEquity}
                 totalProjectedGain={otpScenario.totalProjectedGain}
                 totalUpfrontCashNeeded={otpScenario.totalUpfrontCashNeeded}
