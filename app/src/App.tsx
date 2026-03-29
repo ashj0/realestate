@@ -181,7 +181,7 @@ export default function App() {
       }}
     >
       <Container maxWidth="xl">
-        <Stack spacing={2.5}>
+        <Stack spacing={2}>
           <Header />
 
           <Box
@@ -231,7 +231,7 @@ export default function App() {
           {error ? <Alert severity="error">{error}</Alert> : null}
 
           {result ? (
-            <Stack spacing={2}>
+            <Stack spacing={2} sx={{ mt: 0 }}>
               <Box
                 sx={{
                   display: 'grid',
