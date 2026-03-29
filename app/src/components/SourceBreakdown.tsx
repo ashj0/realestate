@@ -23,8 +23,8 @@ export function SourceBreakdown({ siteEstimates }: SourceBreakdownProps) {
   const rows = estimateRows(siteEstimates);
 
   return (
-    <Paper sx={{ p: 3.5, height: '100%', width: '100%' }}>
-      <Stack spacing={2.5} sx={{ height: '100%' }}>
+    <Paper sx={{ p: 3.5, width: '100%', alignSelf: 'flex-start' }}>
+      <Stack spacing={2.5}>
         <Stack spacing={1}>
           <Typography variant="h5">Source breakdown</Typography>
           <Typography color="text.secondary">
@@ -35,10 +35,10 @@ export function SourceBreakdown({ siteEstimates }: SourceBreakdownProps) {
           </Typography>
         </Stack>
 
-        <Stack spacing={1.5} sx={{ flex: 1, justifyContent: 'space-between' }}>
+        <Stack spacing={1.5}>
           {rows.map((site) => (
-            <Paper key={site.label} variant="outlined" sx={{ p: 2.25, borderRadius: 4, flex: 1 }}>
-              <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" spacing={2} sx={{ height: '100%' }}>
+            <Paper key={site.label} variant="outlined" sx={{ p: 2.25, borderRadius: 4 }}>
+              <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" spacing={2}>
                 <Stack spacing={1}>
                   <Typography fontWeight={700}>{site.label}</Typography>
                   <Typography color="text.secondary">Growth: {growthLabel(site)}</Typography>
