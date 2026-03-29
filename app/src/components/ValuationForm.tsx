@@ -10,7 +10,7 @@ interface ValuationFormProps {
 
 export function ValuationForm({ valuation, onChange, disabled, onSubmit }: ValuationFormProps) {
   return (
-    <Paper sx={{ p: 3, height: '100%', display: 'flex' }}>
+    <Paper sx={{ p: 3, height: '100%', display: 'flex', width: '100%' }}>
       <Stack spacing={2.5} sx={{ width: '100%', justifyContent: 'space-between' }}>
         <Typography variant="h6">Enter last year&apos;s valuation</Typography>
         <TextField

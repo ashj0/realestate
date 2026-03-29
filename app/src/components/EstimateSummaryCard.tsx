@@ -55,16 +55,16 @@ export function EstimateSummaryCard({ result }: EstimateSummaryCardProps) {
         </Stack>
 
         <Grid container spacing={2}>
-          <Grid size={{ xs: 12, md: 4 }}>
-            <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 4, height: '100%' }}>
+          <Grid size={{ xs: 12, sm: 6, xl: 4 }}>
+            <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 4, height: '100%' }}>
               <Stack spacing={1}>
                 <Typography color="text.secondary">Last year&apos;s valuation</Typography>
                 <Typography variant="h5">{formatCurrency(lastYearValuation)}</Typography>
               </Stack>
             </Paper>
           </Grid>
-          <Grid size={{ xs: 12, md: 4 }}>
-            <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 4, height: '100%' }}>
+          <Grid size={{ xs: 12, sm: 6, xl: 4 }}>
+            <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 4, height: '100%' }}>
               <Stack spacing={1}>
                 <Typography color="text.secondary">Property increase</Typography>
                 <Stack direction="row" spacing={1} alignItems="center">
@@ -79,8 +79,8 @@ export function EstimateSummaryCard({ result }: EstimateSummaryCardProps) {
               </Stack>
             </Paper>
           </Grid>
-          <Grid size={{ xs: 12, md: 4 }}>
-            <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 4, height: '100%' }}>
+          <Grid size={{ xs: 12, sm: 12, xl: 4 }}>
+            <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 4, height: '100%' }}>
               <Stack spacing={1}>
                 <Typography color="text.secondary">Sources used</Typography>
                 <Typography variant="h5">{result.result.sitesUsed.length}</Typography>
@@ -97,8 +97,8 @@ export function EstimateSummaryCard({ result }: EstimateSummaryCardProps) {
             <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
               Methodology notes
             </Typography>
-            <Stack spacing={0.75}>
-              {result.assumptions.slice(0, 3).map((assumption) => (
+            <Stack spacing={0.5}>
+              {result.assumptions.slice(0, 2).map((assumption) => (
                 <Typography key={assumption} variant="body2" color="text.secondary">
                   • {assumption}
                 </Typography>
