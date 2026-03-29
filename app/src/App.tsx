@@ -4,7 +4,6 @@ import {
   Box,
   CircularProgress,
   Container,
-  Grid,
   Stack,
 } from '@mui/material';
 import { AlignedAnalysisRow } from './components/AlignedAnalysisRow';
@@ -132,17 +131,27 @@ export default function App() {
           {error ? <Alert severity="error">{error}</Alert> : null}
 
           {result ? (
-            <Stack spacing={2}>
-              <AlignedAnalysisRow
-                left={<EstimateSummaryCard result={result} />}
-                right={<SourceBreakdown siteEstimates={result.siteEstimates} />}
-              />
-
-              <SourceEstimateList
-                siteEstimates={result.siteEstimates}
-                selectedComparables={result.selectedComparables}
-              />
-            </Stack>
+            <Box
+              sx={{
+                display: 'grid',
+                gap: 2,
+                gridTemplateColumns: { xs: '1fr', lg: 'minmax(0, 7fr) minmax(320px, 3fr)' },
+                alignItems: 'start',
+              }}
+            >
+              <Box sx={{ minWidth: 0 }}>
+                <EstimateSummaryCard result={result} />
+              </Box>
+              <Box sx={{ minWidth: 0, alignSelf: 'start' }}>
+                <SourceBreakdown siteEstimates={result.siteEstimates} />
+              </Box>
+              <Box sx={{ minWidth: 0 }}>
+                <SourceEstimateList
+                  siteEstimates={result.siteEstimates}
+                  selectedComparables={result.selectedComparables}
+                />
+              </Box>
+            </Box>
           ) : null}
         </Stack>
       </Container>
