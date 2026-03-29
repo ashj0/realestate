@@ -6,9 +6,11 @@ interface ValuationFormProps {
   valuation: string;
   loanBalance: string;
   sellingCostPercent: string;
+  existingLoanInterestRate: string;
   onValuationChange: (value: string) => void;
   onLoanBalanceChange: (value: string) => void;
   onSellingCostPercentChange: (value: string) => void;
+  onExistingLoanInterestRateChange: (value: string) => void;
   disabled?: boolean;
   onSubmit: () => void;
 }
@@ -17,9 +19,11 @@ export function ValuationForm({
   valuation,
   loanBalance,
   sellingCostPercent,
+  existingLoanInterestRate,
   onValuationChange,
   onLoanBalanceChange,
   onSellingCostPercentChange,
+  onExistingLoanInterestRateChange,
   disabled,
   onSubmit,
 }: ValuationFormProps) {
@@ -48,6 +52,14 @@ export function ValuationForm({
           value={sellingCostPercent}
           onChange={(event) => onSellingCostPercentChange(event.target.value.replace(/[^\d.]/g, ''))}
           placeholder="e.g. 3"
+          inputMode="decimal"
+          fullWidth
+        />
+        <TextField
+          label="Existing loan interest rate (%)"
+          value={existingLoanInterestRate}
+          onChange={(event) => onExistingLoanInterestRateChange(event.target.value.replace(/[^\d.]/g, ''))}
+          placeholder="e.g. 6"
           inputMode="decimal"
           fullWidth
         />

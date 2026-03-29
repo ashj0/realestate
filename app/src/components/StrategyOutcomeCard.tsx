@@ -14,6 +14,7 @@ interface StrategyOutcomeCardProps {
   totalUpfrontCashNeeded: number;
   fundingSurplusShortfall: number | null;
   principalInterestCost: number;
+  existingInterestOnlyCost3Years: number;
   useDepositBond: boolean;
   propertyCount: number;
   annualGrowthPercent: number;
@@ -28,9 +29,15 @@ function buildRecommendation(props: StrategyOutcomeCardProps) {
     principalInterestCost,
     propertyCount,
     annualGrowthPercent,
+    currentValuation,
+    growthPercent,
+    existingInterestOnlyCost3Years,
   } = props;
 
   const redeployNetOutcome = (netDeployableEquity ?? 0) + totalProjectedGain - principalInterestCost;
+  const keepPropertyGross =
+    currentValuation === null || growthPercent === null ? null : currentValuation * Math.pow(1 + growthPercent / 100, 3) - currentValuation;
+  const keepPropertyNet = keepPropertyGross === null ? null : keepPropertyGross - existingInterestOnlyCost3Years;
 
   if (netDeployableEquity === null || netDeployableEquity <= 0) {
     return {
@@ -41,7 +48,7 @@ function buildRecommendation(props: StrategyOutcomeCardProps) {
     };
   }
 
-  if (fundingSurplusShortfall !== null && fundingSurplusShortfall >= 0 && redeployNetOutcome > 0) {
+  if (fundingSurplusShortfall !== null && fundingSurplusShortfall >= 0 && redeployNetOutcome > (keepPropertyNet ?? 0)) {
     return {
       label: 'Sell and Redeploy Candidate',
       color: 'success' as const,
@@ -81,13 +88,16 @@ export function StrategyOutcomeCard(props: StrategyOutcomeCardProps) {
       ? null
       : keepPropertyValueIn3Years - props.currentValuation;
 
+  const keepPropertyNetOutcomeIn3Years =
+    keepPropertyGainIn3Years === null ? null : keepPropertyGainIn3Years - props.existingInterestOnlyCost3Years;
+
   const redeployNetOutcomeIn3Years =
     props.netDeployableEquity === null ? null : props.netDeployableEquity + props.totalProjectedGain - props.principalInterestCost;
 
   const strategyDifference =
-    keepPropertyGainIn3Years === null || redeployNetOutcomeIn3Years === null
+    keepPropertyNetOutcomeIn3Years === null || redeployNetOutcomeIn3Years === null
       ? null
-      : redeployNetOutcomeIn3Years - keepPropertyGainIn3Years;
+      : redeployNetOutcomeIn3Years - keepPropertyNetOutcomeIn3Years;
 
   if (props.valuationConfidence === 'low') {
     warnings.push('Valuation confidence is low, so current value and deployable equity may move materially.');
@@ -129,10 +139,10 @@ export function StrategyOutcomeCard(props: StrategyOutcomeCardProps) {
               <Stack spacing={1}>
                 <Typography color="text.secondary">Keep current property for 3 years</Typography>
                 <Typography variant="h5">
-                  {keepPropertyGainIn3Years === null ? 'Unavailable' : formatCurrency(keepPropertyGainIn3Years)}
+                  {keepPropertyNetOutcomeIn3Years === null ? 'Unavailable' : formatCurrency(keepPropertyNetOutcomeIn3Years)}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  {props.growthPercent === null ? 'Current property growth unavailable' : `${formatPercent(props.growthPercent)} annual growth assumption`}
+                  Growth less 3 years of interest-only costs
                 </Typography>
               </Stack>
             </Paper>
@@ -171,6 +181,9 @@ export function StrategyOutcomeCard(props: StrategyOutcomeCardProps) {
           </Typography>
           <Typography variant="body2" color="text.secondary">
             Net deployable equity: {props.netDeployableEquity === null ? 'Unavailable' : formatCurrency(props.netDeployableEquity)}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Existing property interest-only cost (3 years): {formatCurrency(props.existingInterestOnlyCost3Years)}
           </Typography>
           <Typography variant="body2" color="text.secondary">
             Principal & interest cost: {formatCurrency(props.principalInterestCost)}

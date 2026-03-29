@@ -8,6 +8,7 @@ interface EstimateSummaryCardProps {
   result: EstimateApiResponse;
   loanBalance: number;
   sellingCostPercent: number;
+  existingLoanInterestRate: number;
 }
 
 function toConfidenceLabel(value: EstimateApiResponse['confidence']) {
@@ -20,12 +21,13 @@ function toConfidenceScore(value: EstimateApiResponse['confidence']) {
   return 40;
 }
 
-export function EstimateSummaryCard({ result, loanBalance, sellingCostPercent }: EstimateSummaryCardProps) {
+export function EstimateSummaryCard({ result, loanBalance, sellingCostPercent, existingLoanInterestRate }: EstimateSummaryCardProps) {
   const lastYearValuation = result.input.lastYearValuation;
   const currentValuation = result.result.currentValuation;
   const increaseAmount = currentValuation === null ? null : currentValuation - lastYearValuation;
   const totalEquity = currentValuation === null ? null : currentValuation - loanBalance;
   const estimatedSellingCosts = currentValuation === null ? null : currentValuation * (sellingCostPercent / 100);
+  const annualInterestOnlyCost = loanBalance * (existingLoanInterestRate / 100);
   const netDeployableEquity =
     currentValuation === null || estimatedSellingCosts === null ? null : currentValuation - loanBalance - estimatedSellingCosts;
   const isUp = increaseAmount !== null && increaseAmount > 0;
@@ -120,6 +122,17 @@ export function EstimateSummaryCard({ result, loanBalance, sellingCostPercent }:
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
                   {sellingCostPercent.toFixed(1)}% of estimated current value
+                </Typography>
+              </Stack>
+            </Paper>
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6, xl: 4 }}>
+            <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 4, height: '100%' }}>
+              <Stack spacing={1}>
+                <Typography color="text.secondary">Annual interest-only cost</Typography>
+                <Typography variant="h5">{formatCurrency(annualInterestOnlyCost)}</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {existingLoanInterestRate.toFixed(1)}% of current loan balance
                 </Typography>
               </Stack>
             </Paper>

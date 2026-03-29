@@ -27,6 +27,7 @@ export default function App() {
   const [lastYearValuation, setLastYearValuation] = useState('1850000');
   const [loanBalance, setLoanBalance] = useState('400000');
   const [sellingCostPercent, setSellingCostPercent] = useState('3');
+  const [existingLoanInterestRate, setExistingLoanInterestRate] = useState('6');
   const [otpPurchasePrice, setOtpPurchasePrice] = useState('750000');
   const [otpPropertyCount, setOtpPropertyCount] = useState('2');
   const [otpDepositPercent, setOtpDepositPercent] = useState('10');
@@ -41,8 +42,14 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
 
   const canGenerate = useMemo(() => {
-    return Boolean(selectedProperty && Number(lastYearValuation) > 0 && Number(loanBalance) >= 0 && Number(sellingCostPercent) >= 0);
-  }, [selectedProperty, lastYearValuation, loanBalance, sellingCostPercent]);
+    return Boolean(
+      selectedProperty &&
+      Number(lastYearValuation) > 0 &&
+      Number(loanBalance) >= 0 &&
+      Number(sellingCostPercent) >= 0 &&
+      Number(existingLoanInterestRate) >= 0
+    );
+  }, [selectedProperty, lastYearValuation, loanBalance, sellingCostPercent, existingLoanInterestRate]);
 
   const netDeployableEquity = useMemo(() => {
     if (!result?.result.currentValuation) return null;
@@ -50,6 +57,11 @@ export default function App() {
     const sellingCosts = currentValuation * ((Number(sellingCostPercent) || 0) / 100);
     return currentValuation - (Number(loanBalance) || 0) - sellingCosts;
   }, [result, loanBalance, sellingCostPercent]);
+
+  const existingInterestOnlyCost3Years = useMemo(() => {
+    const annualInterestOnlyCost = (Number(loanBalance) || 0) * ((Number(existingLoanInterestRate) || 0) / 100);
+    return annualInterestOnlyCost * 3;
+  }, [loanBalance, existingLoanInterestRate]);
 
   const otpScenario = useMemo(() => {
     const purchasePrice = Number(otpPurchasePrice) || 0;
@@ -92,8 +104,14 @@ export default function App() {
   ]);
 
   async function handleGenerateEstimate() {
-    if (!selectedProperty || Number(lastYearValuation) <= 0 || Number(loanBalance) < 0 || Number(sellingCostPercent) < 0) {
-      setError('Select a property and enter a valid valuation, loan balance, and selling costs first.');
+    if (
+      !selectedProperty ||
+      Number(lastYearValuation) <= 0 ||
+      Number(loanBalance) < 0 ||
+      Number(sellingCostPercent) < 0 ||
+      Number(existingLoanInterestRate) < 0
+    ) {
+      setError('Select a property and enter valid valuation, loan balance, selling costs, and interest values first.');
       return;
     }
 
@@ -171,9 +189,11 @@ export default function App() {
                 valuation={lastYearValuation}
                 loanBalance={loanBalance}
                 sellingCostPercent={sellingCostPercent}
+                existingLoanInterestRate={existingLoanInterestRate}
                 onValuationChange={setLastYearValuation}
                 onLoanBalanceChange={setLoanBalance}
                 onSellingCostPercentChange={setSellingCostPercent}
+                onExistingLoanInterestRateChange={setExistingLoanInterestRate}
                 disabled={!canGenerate || loading}
                 onSubmit={handleGenerateEstimate}
               />
@@ -206,6 +226,7 @@ export default function App() {
                     result={result}
                     loanBalance={Number(loanBalance) || 0}
                     sellingCostPercent={Number(sellingCostPercent) || 0}
+                    existingLoanInterestRate={Number(existingLoanInterestRate) || 0}
                   />
                 </Box>
                 <Box sx={{ minWidth: 0, display: 'flex' }}>
@@ -260,6 +281,7 @@ export default function App() {
                 totalUpfrontCashNeeded={otpScenario.totalUpfrontCashNeeded}
                 fundingSurplusShortfall={otpScenario.fundingSurplusShortfall}
                 principalInterestCost={otpScenario.principalInterestCost}
+                existingInterestOnlyCost3Years={existingInterestOnlyCost3Years}
                 useDepositBond={useDepositBond}
                 propertyCount={otpScenario.propertyCount}
                 annualGrowthPercent={otpScenario.annualGrowthPercent}
