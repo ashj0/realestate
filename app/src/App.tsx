@@ -292,6 +292,7 @@ export default function App() {
                   yearsToCompletion={otpScenario.yearsToCompletion}
                   retainedEquityPercent={Number(retainedEquityPercent) || 0}
                   netDeployableEquity={netDeployableEquity}
+                  principalInterestCost={otpScenario.principalInterestCost}
                 />
               </Box>
 

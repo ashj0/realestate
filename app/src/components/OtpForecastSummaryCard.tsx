@@ -1,5 +1,5 @@
 import TrendingUpRoundedIcon from '@mui/icons-material/TrendingUpRounded';
-import { Grid, Paper, Stack, Typography } from '@mui/material';
+import { Box, Chip, Grid, Paper, Stack, Typography } from '@mui/material';
 import { formatCurrency, formatPercent } from '../utils';
 
 interface OtpForecastSummaryCardProps {
@@ -12,6 +12,57 @@ interface OtpForecastSummaryCardProps {
   yearsToCompletion: number;
   retainedEquityPercent: number;
   netDeployableEquity: number | null;
+  principalInterestCost: number;
+}
+
+function HeroMetric({
+  label,
+  value,
+  helper,
+  highlight = false,
+  positive = false,
+}: {
+  label: string;
+  value: string;
+  helper?: string;
+  highlight?: boolean;
+  positive?: boolean;
+}) {
+  return (
+    <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 4, height: '100%', bgcolor: highlight ? 'rgba(25, 118, 210, 0.04)' : 'background.paper' }}>
+      <Stack spacing={1}>
+        <Typography color="text.secondary">{label}</Typography>
+        <Typography variant="h5" sx={{ color: positive ? 'success.main' : highlight ? 'primary.main' : 'text.primary' }}>
+          {value}
+        </Typography>
+        {helper ? (
+          <Typography variant="body2" color="text.secondary">
+            {helper}
+          </Typography>
+        ) : null}
+      </Stack>
+    </Paper>
+  );
+}
+
+function DetailRow({ label, value, helper, strong = false }: { label: string; value: string; helper?: string; strong?: boolean }) {
+  return (
+    <Box sx={{ py: 1.5, borderBottom: '1px solid', borderColor: 'divider', '&:last-child': { borderBottom: 'none', pb: 0 } }}>
+      <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" gap={1}>
+        <Typography variant="body2" color="text.secondary">
+          {label}
+        </Typography>
+        <Typography variant="body2" sx={{ fontWeight: strong ? 700 : 500, color: strong ? 'text.primary' : 'text.secondary' }}>
+          {value}
+        </Typography>
+      </Stack>
+      {helper ? (
+        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+          {helper}
+        </Typography>
+      ) : null}
+    </Box>
+  );
 }
 
 export function OtpForecastSummaryCard({
@@ -24,6 +75,7 @@ export function OtpForecastSummaryCard({
   yearsToCompletion,
   retainedEquityPercent,
   netDeployableEquity,
+  principalInterestCost,
 }: OtpForecastSummaryCardProps) {
   const depositAmount = purchasePrice * (depositPercent / 100);
   const actualUpfrontCash = useDepositBond ? actualUpfrontCashPerProperty : depositAmount;
@@ -41,107 +93,129 @@ export function OtpForecastSummaryCard({
   return (
     <Paper sx={{ p: 3.5, width: '100%' }}>
       <Stack spacing={3}>
-        <Stack spacing={1}>
-          <Typography variant="h5">OTP forecast summary</Typography>
-          <Typography color="text.secondary">
-            Estimate the completion value, expected gain, usable OTP equity at completion, and whether current deployable equity can fund the upfront structure.
-          </Typography>
+        <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', md: 'center' }} gap={2}>
+          <Box sx={{ minWidth: 0 }}>
+            <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.75, flexWrap: 'wrap' }}>
+              <Typography variant="h5">Projected OTP Outcome</Typography>
+              <Chip label="At completion" size="small" variant="outlined" />
+            </Stack>
+            <Typography color="text.secondary">
+              Focuses on the likely future outcome first, with the funding and assumption detail grouped underneath.
+            </Typography>
+          </Box>
         </Stack>
 
         <Grid container spacing={2}>
-          <Grid size={{ xs: 12, sm: 6, xl: 4 }}>
-            <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 4, height: '100%' }}>
-              <Stack spacing={1}>
-                <Typography color="text.secondary">Forecast completion value</Typography>
-                <Typography variant="h5">{formatCurrency(forecastCompletionValue)}</Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {formatPercent(annualGrowthPercent)} over {yearsToCompletion} years
-                </Typography>
-              </Stack>
-            </Paper>
+          <Grid size={{ xs: 12, sm: 6, xl: 3 }}>
+            <HeroMetric label="Purchase price" value={formatCurrency(purchasePrice)} />
           </Grid>
-          <Grid size={{ xs: 12, sm: 6, xl: 4 }}>
-            <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 4, height: '100%' }}>
-              <Stack spacing={1}>
-                <Typography color="text.secondary">Forecast gain per property</Typography>
-                <Stack direction="row" spacing={1} alignItems="center">
-                  <TrendingUpRoundedIcon color={hasPositiveGain ? 'success' : 'disabled'} />
-                  <Typography variant="h5" sx={{ color: hasPositiveGain ? 'success.main' : 'text.primary' }}>
-                    {formatCurrency(forecastEquityGainPerProperty)}
-                  </Typography>
-                </Stack>
-                <Typography variant="body2" color="text.secondary">
-                  Completion value - purchase price
-                </Typography>
-              </Stack>
-            </Paper>
+          <Grid size={{ xs: 12, sm: 6, xl: 3 }}>
+            <HeroMetric
+              label="Projected completion value"
+              value={formatCurrency(forecastCompletionValue)}
+              helper={`${formatPercent(annualGrowthPercent)} over ${yearsToCompletion} years`}
+              highlight
+            />
           </Grid>
-          <Grid size={{ xs: 12, sm: 6, xl: 4 }}>
-            <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 4, height: '100%' }}>
-              <Stack spacing={1}>
-                <Typography color="text.secondary">Usable OTP equity per property</Typography>
-                <Typography variant="h5">{formatCurrency(usableOtpEquityPerProperty)}</Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Completion value - retained equity ({retainedEquityPercent.toFixed(1)}%)
-                </Typography>
-              </Stack>
-            </Paper>
+          <Grid size={{ xs: 12, sm: 6, xl: 3 }}>
+            <HeroMetric
+              label="Projected equity created"
+              value={formatCurrency(forecastEquityGainPerProperty)}
+              helper="Completion value minus purchase price"
+            />
           </Grid>
-          <Grid size={{ xs: 12, sm: 6, xl: 4 }}>
-            <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 4, height: '100%' }}>
-              <Stack spacing={1}>
-                <Typography color="text.secondary">Total usable OTP equity</Typography>
-                <Stack direction="row" spacing={1} alignItems="center">
-                  <TrendingUpRoundedIcon color={hasPositiveGain ? 'success' : 'disabled'} />
-                  <Typography variant="h5" sx={{ color: hasPositiveGain ? 'success.main' : 'text.primary' }}>
-                    {formatCurrency(totalUsableOtpEquity)}
-                  </Typography>
-                </Stack>
-                <Typography variant="body2" color="text.secondary">
-                  Across {propertyCount} properties
-                </Typography>
-              </Stack>
-            </Paper>
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, xl: 4 }}>
-            <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 4, height: '100%' }}>
-              <Stack spacing={1}>
-                <Typography color="text.secondary">Deposit amount per property</Typography>
-                <Typography variant="h5">{formatCurrency(depositAmount)}</Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {depositPercent.toFixed(1)}% deposit structure
-                </Typography>
-              </Stack>
-            </Paper>
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, xl: 4 }}>
-            <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 4, height: '100%' }}>
-              <Stack spacing={1}>
-                <Typography color="text.secondary">Total upfront cash needed</Typography>
-                <Typography variant="h5">{formatCurrency(totalUpfrontCashNeeded)}</Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {useDepositBond ? 'Using deposit bond cash assumption' : 'Using full deposit amount'}
-                </Typography>
-              </Stack>
-            </Paper>
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, xl: 4 }}>
-            <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 4, height: '100%' }}>
-              <Stack spacing={1}>
-                <Typography color="text.secondary">Funding surplus / shortfall</Typography>
-                <Stack direction="row" spacing={1} alignItems="center">
-                  <TrendingUpRoundedIcon color={hasFundingCover ? 'success' : 'disabled'} />
-                  <Typography variant="h5" sx={{ color: hasFundingCover ? 'success.main' : 'text.primary' }}>
-                    {fundingSurplusShortfall === null ? 'Unavailable' : formatCurrency(fundingSurplusShortfall)}
-                  </Typography>
-                </Stack>
-                <Typography variant="body2" color="text.secondary">
-                  Net deployable equity - total upfront cash
-                </Typography>
-              </Stack>
-            </Paper>
+          <Grid size={{ xs: 12, sm: 6, xl: 3 }}>
+            <HeroMetric
+              label="Usable equity at completion"
+              value={formatCurrency(usableOtpEquityPerProperty)}
+              helper={`After retaining ${retainedEquityPercent.toFixed(1)}% equity`}
+              positive
+            />
           </Grid>
         </Grid>
+
+        <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 4 }}>
+          <Stack spacing={2}>
+            <Box>
+              <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                Forecast assumptions
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                These settings explain how the completion outcome and funding position have been modeled.
+              </Typography>
+            </Box>
+
+            <Grid container spacing={3}>
+              <Grid size={{ xs: 12, md: 6 }}>
+                <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+                  Project setup
+                </Typography>
+                <Box>
+                  <DetailRow label="Number of OTP properties" value={String(propertyCount)} />
+                  <DetailRow
+                    label="Deposit structure"
+                    value={formatPercent(depositPercent)}
+                    helper={useDepositBond ? 'Using deposit bond structure' : 'Using full cash deposit structure'}
+                  />
+                  <DetailRow
+                    label="Deposit amount per property"
+                    value={formatCurrency(depositAmount)}
+                  />
+                  <DetailRow
+                    label="Actual upfront cash per property"
+                    value={formatCurrency(actualUpfrontCash)}
+                    helper={useDepositBond ? 'Deposit bond cash assumption applied' : 'Matches full deposit amount'}
+                  />
+                  <DetailRow
+                    label="Total upfront cash needed"
+                    value={formatCurrency(totalUpfrontCashNeeded)}
+                    strong
+                  />
+                </Box>
+              </Grid>
+
+              <Grid size={{ xs: 12, md: 6 }}>
+                <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+                  Growth and outcome
+                </Typography>
+                <Box>
+                  <DetailRow label="Forecast annual growth" value={formatPercent(annualGrowthPercent)} />
+                  <DetailRow label="Years to completion" value={String(yearsToCompletion)} />
+                  <DetailRow
+                    label="Total projected gain"
+                    value={formatCurrency(totalProjectedGain)}
+                    helper={`Across ${propertyCount} ${propertyCount === 1 ? 'property' : 'properties'}`}
+                    strong={hasPositiveGain}
+                  />
+                  <DetailRow
+                    label="Total usable OTP equity"
+                    value={formatCurrency(totalUsableOtpEquity)}
+                    strong
+                  />
+                  <DetailRow
+                    label="Principal & interest cost"
+                    value={formatCurrency(principalInterestCost)}
+                  />
+                  <DetailRow
+                    label="Funding surplus / shortfall"
+                    value={fundingSurplusShortfall === null ? 'Unavailable' : formatCurrency(fundingSurplusShortfall)}
+                    helper="Net deployable equity minus total upfront cash needed"
+                    strong={hasFundingCover}
+                  />
+                </Box>
+              </Grid>
+            </Grid>
+          </Stack>
+        </Paper>
+
+        <Stack direction="row" spacing={1} alignItems="center">
+          <TrendingUpRoundedIcon color={hasPositiveGain ? 'success' : 'disabled'} />
+          <Typography variant="body2" color="text.secondary">
+            {hasFundingCover
+              ? 'Current modeled deployable equity appears sufficient to fund the upfront OTP structure.'
+              : 'Review the funding gap if the modeled deployable equity does not fully cover the upfront OTP structure.'}
+          </Typography>
+        </Stack>
       </Stack>
     </Paper>
   );
