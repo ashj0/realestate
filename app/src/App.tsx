@@ -6,7 +6,6 @@ import {
   Container,
   Stack,
 } from '@mui/material';
-import { AlignedAnalysisRow } from './components/AlignedAnalysisRow';
 import { Header } from './components/Header';
 import { SearchPanel } from './components/SearchPanel';
 import { SelectedSuburbCard } from './components/SelectedSuburbCard';
@@ -89,38 +88,39 @@ export default function App() {
         <Stack spacing={2.5}>
           <Header />
 
-          <Stack spacing={2}>
-            <AlignedAnalysisRow
-              left={
-                <SearchPanel
-                  options={propertyOptions}
-                  selected={selectedProperty}
-                  onChange={setSelectedProperty}
-                  mapOpen={showMap}
-                  onMapOpen={() => setShowMap(true)}
-                  onMapClose={() => setShowMap(false)}
-                  apiBaseUrl={API_BASE_URL}
-                />
-              }
-              right={
-                <Box sx={{ gridRow: { xs: 'auto', lg: 'span 2' }, width: '100%' }}>
-                  <ValuationForm
-                    valuation={lastYearValuation}
-                    principal={principal}
-                    onValuationChange={setLastYearValuation}
-                    onPrincipalChange={setPrincipal}
-                    disabled={!canGenerate || loading}
-                    onSubmit={handleGenerateEstimate}
-                  />
-                </Box>
-              }
-            />
-
-            <AlignedAnalysisRow
-              left={<SelectedSuburbCard property={selectedProperty} />}
-              right={<Box sx={{ display: { xs: 'none', lg: 'block' }, width: '100%' }} />}
-            />
-          </Stack>
+          <Box
+            sx={{
+              display: 'grid',
+              gap: 2,
+              gridTemplateColumns: { xs: '1fr', lg: 'minmax(0, 7fr) minmax(320px, 3fr)' },
+              alignItems: 'start',
+            }}
+          >
+            <Box sx={{ minWidth: 0 }}>
+              <SearchPanel
+                options={propertyOptions}
+                selected={selectedProperty}
+                onChange={setSelectedProperty}
+                mapOpen={showMap}
+                onMapOpen={() => setShowMap(true)}
+                onMapClose={() => setShowMap(false)}
+                apiBaseUrl={API_BASE_URL}
+              />
+            </Box>
+            <Box sx={{ minWidth: 0, gridRow: { xs: 'auto', lg: 'span 2' } }}>
+              <ValuationForm
+                valuation={lastYearValuation}
+                principal={principal}
+                onValuationChange={setLastYearValuation}
+                onPrincipalChange={setPrincipal}
+                disabled={!canGenerate || loading}
+                onSubmit={handleGenerateEstimate}
+              />
+            </Box>
+            <Box sx={{ minWidth: 0 }}>
+              <SelectedSuburbCard property={selectedProperty} />
+            </Box>
+          </Box>
 
           {loading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
