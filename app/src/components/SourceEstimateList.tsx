@@ -16,7 +16,7 @@ import {
   Typography,
 } from '@mui/material';
 import type { ComparableRecord, EstimateApiResponse, SiteEstimate } from '../types';
-import { formatCurrency, formatPercent } from '../utils';
+import { formatCurrency, formatDisplayDate, formatPercent, parseLooseDate } from '../utils';
 
 interface SourceEstimateListProps {
   siteEstimates: EstimateApiResponse['siteEstimates'];
@@ -32,17 +32,31 @@ function estimateRows(siteEstimates: EstimateApiResponse['siteEstimates']) {
 }
 
 function allSoldHistory(siteEstimates: EstimateApiResponse['siteEstimates']) {
-  return estimateRows(siteEstimates)
-    .flatMap((site) =>
-      site.soldHistory.map((item) => ({
+  const deduped = new Map<string, { date: string | null; price: number | null; source: string | null; sourceUrl: string | null }>();
+
+  for (const site of estimateRows(siteEstimates)) {
+    for (const item of site.soldHistory) {
+      const record = {
         date: item.date,
         price: item.price,
         source: item.source ?? site.label,
         sourceUrl: item.sourceUrl ?? site.sourceUrl,
-      })),
-    )
-    .filter((item) => item.date || item.price || item.source)
-    .sort((a, b) => String(b.date ?? '').localeCompare(String(a.date ?? '')));
+      };
+
+      if (!(record.date || record.price || record.source)) continue;
+
+      const key = `${record.source ?? 'unknown'}|${record.date ?? ''}|${record.price ?? ''}|${record.sourceUrl ?? ''}`;
+      if (!deduped.has(key)) {
+        deduped.set(key, record);
+      }
+    }
+  }
+
+  return Array.from(deduped.values()).sort((a, b) => {
+    const left = parseLooseDate(a.date)?.getTime() ?? 0;
+    const right = parseLooseDate(b.date)?.getTime() ?? 0;
+    return right - left;
+  });
 }
 
 function growthLabel(site: SiteEstimate) {
@@ -53,7 +67,7 @@ function renderComparableRows(rows: ComparableRecord[]) {
   if (!rows.length) {
     return (
       <TableRow>
-        <TableCell colSpan={5} sx={{ color: 'text.secondary' }}>
+        <TableCell colSpan={6} sx={{ color: 'text.secondary' }}>
           No comparable properties returned.
         </TableCell>
       </TableRow>
@@ -63,19 +77,13 @@ function renderComparableRows(rows: ComparableRecord[]) {
   return rows.map((row, index) => (
     <TableRow key={`${row.address}-${row.saleDate ?? index}`} hover>
       <TableCell>
-        <Stack spacing={0.5}>
-          <Typography variant="body2" fontWeight={600}>
-            {row.address}
-          </Typography>
-          {row.salePrice != null ? (
-            <Typography variant="caption" color="text.secondary">
-              {formatCurrency(row.salePrice)}
-            </Typography>
-          ) : null}
-        </Stack>
+        <Typography variant="body2" fontWeight={600}>
+          {row.address}
+        </Typography>
       </TableCell>
       <TableCell>{row.source ?? 'Unknown'}</TableCell>
-      <TableCell>{row.saleDate ?? '—'}</TableCell>
+      <TableCell>{row.saleDate ? formatDisplayDate(row.saleDate) : '—'}</TableCell>
+      <TableCell>{row.salePrice != null ? formatCurrency(row.salePrice) : '—'}</TableCell>
       <TableCell>
         {row.sourceUrl ? (
           <Link href={row.sourceUrl} target="_blank" rel="noreferrer" underline="hover">
@@ -183,6 +191,7 @@ export function SourceEstimateList({ siteEstimates, selectedComparables }: Sourc
                       <TableCell>Name</TableCell>
                       <TableCell>Site</TableCell>
                       <TableCell>Sale date</TableCell>
+                      <TableCell>Sale price</TableCell>
                       <TableCell>Link</TableCell>
                       <TableCell></TableCell>
                     </TableRow>
@@ -220,7 +229,7 @@ export function SourceEstimateList({ siteEstimates, selectedComparables }: Sourc
                     {soldHistoryRows.length ? (
                       soldHistoryRows.map((row, index) => (
                         <TableRow key={`${row.source}-${row.date ?? index}`} hover>
-                          <TableCell>{row.date ?? '—'}</TableCell>
+                          <TableCell>{row.date ? formatDisplayDate(row.date) : '—'}</TableCell>
                           <TableCell>{row.price === null ? '—' : formatCurrency(row.price)}</TableCell>
                           <TableCell>{row.source ?? 'Unknown'}</TableCell>
                           <TableCell>
