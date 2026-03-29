@@ -13,6 +13,8 @@ import { ValuationForm } from './components/ValuationForm';
 import { EstimateSummaryCard } from './components/EstimateSummaryCard';
 import { SourceBreakdown } from './components/SourceBreakdown';
 import { SourceEstimateList } from './components/SourceEstimateList';
+import { OtpScenarioForm } from './components/OtpScenarioForm';
+import { OtpForecastSummaryCard } from './components/OtpForecastSummaryCard';
 import { propertyOptions } from './data/mockData';
 import type { EstimateApiResponse, PropertyOption } from './types';
 
@@ -24,6 +26,13 @@ export default function App() {
   const [lastYearValuation, setLastYearValuation] = useState('1850000');
   const [loanBalance, setLoanBalance] = useState('400000');
   const [sellingCostPercent, setSellingCostPercent] = useState('3');
+  const [otpPurchasePrice, setOtpPurchasePrice] = useState('750000');
+  const [otpPropertyCount, setOtpPropertyCount] = useState('2');
+  const [otpDepositPercent, setOtpDepositPercent] = useState('10');
+  const [useDepositBond, setUseDepositBond] = useState(true);
+  const [otpActualUpfrontCash, setOtpActualUpfrontCash] = useState('20000');
+  const [otpAnnualGrowthPercent, setOtpAnnualGrowthPercent] = useState('7');
+  const [otpYearsToCompletion, setOtpYearsToCompletion] = useState('2');
   const [showMap, setShowMap] = useState(false);
   const [result, setResult] = useState<EstimateApiResponse | null>(null);
   const [loading, setLoading] = useState(false);
@@ -32,6 +41,13 @@ export default function App() {
   const canGenerate = useMemo(() => {
     return Boolean(selectedProperty && Number(lastYearValuation) > 0 && Number(loanBalance) >= 0 && Number(sellingCostPercent) >= 0);
   }, [selectedProperty, lastYearValuation, loanBalance, sellingCostPercent]);
+
+  const netDeployableEquity = useMemo(() => {
+    if (!result?.result.currentValuation) return null;
+    const currentValuation = result.result.currentValuation;
+    const sellingCosts = currentValuation * ((Number(sellingCostPercent) || 0) / 100);
+    return currentValuation - (Number(loanBalance) || 0) - sellingCosts;
+  }, [result, loanBalance, sellingCostPercent]);
 
   async function handleGenerateEstimate() {
     if (!selectedProperty || Number(lastYearValuation) <= 0 || Number(loanBalance) < 0 || Number(sellingCostPercent) < 0) {
@@ -153,6 +169,42 @@ export default function App() {
                 <Box sx={{ minWidth: 0, display: 'flex' }}>
                   <SourceBreakdown siteEstimates={result.siteEstimates} />
                 </Box>
+              </Box>
+
+              <Box
+                sx={{
+                  display: 'grid',
+                  gap: 2,
+                  gridTemplateColumns: { xs: '1fr', lg: 'minmax(320px, 1fr) minmax(0, 2fr)' },
+                  alignItems: 'start',
+                }}
+              >
+                <OtpScenarioForm
+                  purchasePrice={otpPurchasePrice}
+                  propertyCount={otpPropertyCount}
+                  depositPercent={otpDepositPercent}
+                  useDepositBond={useDepositBond}
+                  actualUpfrontCash={otpActualUpfrontCash}
+                  annualGrowthPercent={otpAnnualGrowthPercent}
+                  yearsToCompletion={otpYearsToCompletion}
+                  onPurchasePriceChange={setOtpPurchasePrice}
+                  onPropertyCountChange={setOtpPropertyCount}
+                  onDepositPercentChange={setOtpDepositPercent}
+                  onUseDepositBondChange={setUseDepositBond}
+                  onActualUpfrontCashChange={setOtpActualUpfrontCash}
+                  onAnnualGrowthPercentChange={setOtpAnnualGrowthPercent}
+                  onYearsToCompletionChange={setOtpYearsToCompletion}
+                />
+                <OtpForecastSummaryCard
+                  purchasePrice={Number(otpPurchasePrice) || 0}
+                  propertyCount={Number(otpPropertyCount) || 0}
+                  depositPercent={Number(otpDepositPercent) || 0}
+                  useDepositBond={useDepositBond}
+                  actualUpfrontCashPerProperty={Number(otpActualUpfrontCash) || 0}
+                  annualGrowthPercent={Number(otpAnnualGrowthPercent) || 0}
+                  yearsToCompletion={Number(otpYearsToCompletion) || 0}
+                  netDeployableEquity={netDeployableEquity}
+                />
               </Box>
 
               <Box sx={{ width: '100%' }}>
