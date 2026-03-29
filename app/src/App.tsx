@@ -131,25 +131,30 @@ export default function App() {
           {error ? <Alert severity="error">{error}</Alert> : null}
 
           {result ? (
-            <Box
-              sx={{
-                display: 'grid',
-                gap: 2,
-                gridTemplateColumns: { xs: '1fr', lg: 'minmax(0, 7fr) minmax(320px, 3fr)' },
-                alignItems: 'start',
-              }}
-            >
-              <Stack spacing={2} sx={{ minWidth: 0 }}>
-                <EstimateSummaryCard result={result} principal={Number(principal) || 0} />
+            <Stack spacing={2}>
+              <Box
+                sx={{
+                  display: 'grid',
+                  gap: 2,
+                  gridTemplateColumns: { xs: '1fr', lg: 'minmax(0, 7fr) minmax(320px, 3fr)' },
+                  alignItems: { xs: 'start', lg: 'stretch' },
+                }}
+              >
+                <Box sx={{ minWidth: 0, display: 'flex' }}>
+                  <EstimateSummaryCard result={result} principal={Number(principal) || 0} />
+                </Box>
+                <Box sx={{ minWidth: 0, display: 'flex' }}>
+                  <SourceBreakdown siteEstimates={result.siteEstimates} />
+                </Box>
+              </Box>
+
+              <Box sx={{ maxWidth: { xs: '100%', lg: '70%' } }}>
                 <SourceEstimateList
                   siteEstimates={result.siteEstimates}
                   selectedComparables={result.selectedComparables}
                 />
-              </Stack>
-              <Box sx={{ minWidth: 0, alignSelf: { xs: 'start', lg: 'stretch' }, display: 'flex' }}>
-                <SourceBreakdown siteEstimates={result.siteEstimates} />
               </Box>
-            </Box>
+            </Stack>
           ) : null}
         </Stack>
       </Container>
