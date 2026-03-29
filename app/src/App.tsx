@@ -32,6 +32,7 @@ export default function App() {
   const [otpDepositPercent, setOtpDepositPercent] = useState('10');
   const [useDepositBond, setUseDepositBond] = useState(true);
   const [otpActualUpfrontCash, setOtpActualUpfrontCash] = useState('20000');
+  const [otpPrincipalInterestCost, setOtpPrincipalInterestCost] = useState('60000');
   const [otpAnnualGrowthPercent, setOtpAnnualGrowthPercent] = useState('7');
   const [otpYearsToCompletion, setOtpYearsToCompletion] = useState('2');
   const [showMap, setShowMap] = useState(false);
@@ -55,6 +56,7 @@ export default function App() {
     const propertyCount = Number(otpPropertyCount) || 0;
     const depositPercent = Number(otpDepositPercent) || 0;
     const actualUpfrontCashPerProperty = Number(otpActualUpfrontCash) || 0;
+    const principalInterestCost = Number(otpPrincipalInterestCost) || 0;
     const annualGrowthPercent = Number(otpAnnualGrowthPercent) || 0;
     const yearsToCompletion = Number(otpYearsToCompletion) || 0;
     const depositAmount = purchasePrice * (depositPercent / 100);
@@ -70,6 +72,7 @@ export default function App() {
       propertyCount,
       depositPercent,
       actualUpfrontCashPerProperty,
+      principalInterestCost,
       annualGrowthPercent,
       yearsToCompletion,
       totalUpfrontCashNeeded,
@@ -81,6 +84,7 @@ export default function App() {
     otpPropertyCount,
     otpDepositPercent,
     otpActualUpfrontCash,
+    otpPrincipalInterestCost,
     otpAnnualGrowthPercent,
     otpYearsToCompletion,
     useDepositBond,
@@ -223,6 +227,7 @@ export default function App() {
                   depositPercent={otpDepositPercent}
                   useDepositBond={useDepositBond}
                   actualUpfrontCash={otpActualUpfrontCash}
+                  principalInterestCost={otpPrincipalInterestCost}
                   annualGrowthPercent={otpAnnualGrowthPercent}
                   yearsToCompletion={otpYearsToCompletion}
                   onPurchasePriceChange={setOtpPurchasePrice}
@@ -230,6 +235,7 @@ export default function App() {
                   onDepositPercentChange={setOtpDepositPercent}
                   onUseDepositBondChange={setUseDepositBond}
                   onActualUpfrontCashChange={setOtpActualUpfrontCash}
+                  onPrincipalInterestCostChange={setOtpPrincipalInterestCost}
                   onAnnualGrowthPercentChange={setOtpAnnualGrowthPercent}
                   onYearsToCompletionChange={setOtpYearsToCompletion}
                 />
@@ -253,6 +259,7 @@ export default function App() {
                 totalProjectedGain={otpScenario.totalProjectedGain}
                 totalUpfrontCashNeeded={otpScenario.totalUpfrontCashNeeded}
                 fundingSurplusShortfall={otpScenario.fundingSurplusShortfall}
+                principalInterestCost={otpScenario.principalInterestCost}
                 useDepositBond={useDepositBond}
                 propertyCount={otpScenario.propertyCount}
                 annualGrowthPercent={otpScenario.annualGrowthPercent}

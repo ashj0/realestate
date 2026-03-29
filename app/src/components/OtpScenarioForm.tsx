@@ -7,6 +7,7 @@ interface OtpScenarioFormProps {
   depositPercent: string;
   useDepositBond: boolean;
   actualUpfrontCash: string;
+  principalInterestCost: string;
   annualGrowthPercent: string;
   yearsToCompletion: string;
   onPurchasePriceChange: (value: string) => void;
@@ -14,6 +15,7 @@ interface OtpScenarioFormProps {
   onDepositPercentChange: (value: string) => void;
   onUseDepositBondChange: (value: boolean) => void;
   onActualUpfrontCashChange: (value: string) => void;
+  onPrincipalInterestCostChange: (value: string) => void;
   onAnnualGrowthPercentChange: (value: string) => void;
   onYearsToCompletionChange: (value: string) => void;
 }
@@ -24,6 +26,7 @@ export function OtpScenarioForm({
   depositPercent,
   useDepositBond,
   actualUpfrontCash,
+  principalInterestCost,
   annualGrowthPercent,
   yearsToCompletion,
   onPurchasePriceChange,
@@ -31,6 +34,7 @@ export function OtpScenarioForm({
   onDepositPercentChange,
   onUseDepositBondChange,
   onActualUpfrontCashChange,
+  onPrincipalInterestCostChange,
   onAnnualGrowthPercentChange,
   onYearsToCompletionChange,
 }: OtpScenarioFormProps) {
@@ -81,6 +85,15 @@ export function OtpScenarioForm({
           value={formatNumberInput(actualUpfrontCash)}
           onChange={(event) => onActualUpfrontCashChange(parseNumberInput(event.target.value))}
           placeholder="e.g. 20,000"
+          inputMode="numeric"
+          fullWidth
+        />
+
+        <TextField
+          label="Principal & interest cost"
+          value={formatNumberInput(principalInterestCost)}
+          onChange={(event) => onPrincipalInterestCostChange(parseNumberInput(event.target.value))}
+          placeholder="e.g. 60,000"
           inputMode="numeric"
           fullWidth
         />
