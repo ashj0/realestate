@@ -108,15 +108,30 @@ export function EstimateSummaryCard({ result, loanBalance, sellingCostPercent, e
   return (
     <Paper sx={{ p: { xs: 2.5, md: 3.5 }, height: '100%', width: '100%', overflow: 'hidden' }}>
       <Stack spacing={3} sx={{ height: '100%', minWidth: 0 }}>
-        <Stack direction={{ xs: 'column', xl: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', xl: 'center' }} gap={2}>
+        <Stack direction={{ xs: 'column', xl: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', xl: 'flex-start' }} gap={2}>
           <Box sx={{ minWidth: 0, flex: 1 }}>
             <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.75, flexWrap: 'wrap' }}>
               <Typography variant="h5">Current Property Position</Typography>
               <Chip label="Now" size="small" variant="outlined" />
             </Stack>
-            <Typography variant="body2" color="text.secondary" sx={{ overflowWrap: 'anywhere' }}>
-              Shows what the property is worth today, how much equity sits in it, and how much may actually be deployable.
-            </Typography>
+            <Stack spacing={0.5} sx={{ minWidth: 0 }}>
+              <Typography variant="overline" color="text.secondary">
+                Estimated current value
+              </Typography>
+              <Typography
+                variant="h3"
+                sx={{
+                  color: isUp ? 'success.main' : 'text.primary',
+                  lineHeight: 1.05,
+                  overflowWrap: 'anywhere',
+                }}
+              >
+                {currentValuation === null ? 'Unavailable' : formatCurrency(currentValuation)}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ overflowWrap: 'anywhere' }}>
+                Based on last year's valuation of {formatCurrency(lastYearValuation)}
+              </Typography>
+            </Stack>
           </Box>
           <Chip
             icon={<VerifiedRoundedIcon />}
@@ -153,14 +168,6 @@ export function EstimateSummaryCard({ result, loanBalance, sellingCostPercent, e
         </Paper>
 
         <Grid container spacing={2}>
-          <Grid size={{ xs: 12, sm: 6, xl: 3 }}>
-            <HeroMetric
-              label="Estimated current value"
-              value={currentValuation === null ? 'Unavailable' : formatCurrency(currentValuation)}
-              helper={`Based on last year's valuation of ${formatCurrency(lastYearValuation)}`}
-              highlight
-            />
-          </Grid>
           <Grid size={{ xs: 12, sm: 6, xl: 3 }}>
             <HeroMetric label="Loan balance" value={formatCurrency(loanBalance)} />
           </Grid>
