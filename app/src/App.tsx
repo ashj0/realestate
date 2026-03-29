@@ -192,7 +192,7 @@ export default function App() {
               alignItems: 'start',
             }}
           >
-            <Box sx={{ minWidth: 0 }}>
+            <Stack spacing={2} sx={{ minWidth: 0 }}>
               <SearchPanel
                 options={propertyOptions}
                 selected={selectedProperty}
@@ -202,8 +202,9 @@ export default function App() {
                 onMapClose={() => setShowMap(false)}
                 apiBaseUrl={API_BASE_URL}
               />
-            </Box>
-            <Box sx={{ minWidth: 0, gridRow: { xs: 'auto', lg: 'span 2' } }}>
+              <SelectedSuburbCard property={selectedProperty} />
+            </Stack>
+            <Box sx={{ minWidth: 0 }}>
               <ValuationForm
                 valuation={lastYearValuation}
                 loanBalance={loanBalance}
@@ -218,9 +219,6 @@ export default function App() {
                 disabled={!canGenerate || loading}
                 onSubmit={handleGenerateEstimate}
               />
-            </Box>
-            <Box sx={{ minWidth: 0 }}>
-              <SelectedSuburbCard property={selectedProperty} />
             </Box>
           </Box>
 
