@@ -36,14 +36,31 @@ function HeroMetric({
   positive?: boolean;
 }) {
   return (
-    <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 4, height: '100%', bgcolor: highlight ? 'rgba(25, 118, 210, 0.04)' : 'background.paper' }}>
-      <Stack spacing={1}>
+    <Paper
+      variant="outlined"
+      sx={{
+        p: 2.5,
+        borderRadius: 4,
+        height: '100%',
+        minWidth: 0,
+        overflow: 'hidden',
+        bgcolor: highlight ? 'rgba(25, 118, 210, 0.04)' : 'background.paper',
+      }}
+    >
+      <Stack spacing={1} sx={{ minWidth: 0 }}>
         <Typography color="text.secondary">{label}</Typography>
-        <Typography variant="h5" sx={{ color: positive ? 'success.main' : highlight ? 'primary.main' : 'text.primary' }}>
+        <Typography
+          variant="h5"
+          sx={{
+            color: positive ? 'success.main' : highlight ? 'primary.main' : 'text.primary',
+            overflowWrap: 'anywhere',
+            lineHeight: 1.15,
+          }}
+        >
           {value}
         </Typography>
         {helper ? (
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" color="text.secondary" sx={{ overflowWrap: 'anywhere' }}>
             {helper}
           </Typography>
         ) : null}
@@ -54,17 +71,20 @@ function HeroMetric({
 
 function DetailRow({ label, value, helper, strong = false }: { label: string; value: string; helper?: string; strong?: boolean }) {
   return (
-    <Box sx={{ py: 1.5, borderBottom: '1px solid', borderColor: 'divider', '&:last-child': { borderBottom: 'none', pb: 0 } }}>
-      <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" gap={1}>
-        <Typography variant="body2" color="text.secondary">
+    <Box sx={{ py: 1.5, borderBottom: '1px solid', borderColor: 'divider', '&:last-child': { borderBottom: 'none', pb: 0 }, minWidth: 0 }}>
+      <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" gap={1} sx={{ minWidth: 0 }}>
+        <Typography variant="body2" color="text.secondary" sx={{ minWidth: 0, overflowWrap: 'anywhere' }}>
           {label}
         </Typography>
-        <Typography variant="body2" sx={{ fontWeight: strong ? 700 : 500, color: strong ? 'text.primary' : 'text.secondary' }}>
+        <Typography
+          variant="body2"
+          sx={{ fontWeight: strong ? 700 : 500, color: strong ? 'text.primary' : 'text.secondary', overflowWrap: 'anywhere' }}
+        >
           {value}
         </Typography>
       </Stack>
       {helper ? (
-        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5, overflowWrap: 'anywhere' }}>
           {helper}
         </Typography>
       ) : null}
@@ -86,16 +106,16 @@ export function EstimateSummaryCard({ result, loanBalance, sellingCostPercent, e
   const isUp = increaseAmount !== null && increaseAmount > 0;
 
   return (
-    <Paper sx={{ p: 3.5, height: '100%', width: '100%' }}>
-      <Stack spacing={3} sx={{ height: '100%' }}>
+    <Paper sx={{ p: { xs: 2.5, md: 3.5 }, height: '100%', width: '100%', overflow: 'hidden' }}>
+      <Stack spacing={3} sx={{ height: '100%', minWidth: 0 }}>
         <Stack direction={{ xs: 'column', xl: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', xl: 'center' }} gap={2}>
           <Box sx={{ minWidth: 0, flex: 1 }}>
             <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.75, flexWrap: 'wrap' }}>
               <Typography variant="h5">Current Property Position</Typography>
               <Chip label="Now" size="small" variant="outlined" />
             </Stack>
-            <Typography variant="body2" color="text.secondary">
-              Shows what the property is worth today, how much equity sits in it, and how much may actually be usable.
+            <Typography variant="body2" color="text.secondary" sx={{ overflowWrap: 'anywhere' }}>
+              Shows what the property is worth today, how much equity sits in it, and how much may actually be deployable.
             </Typography>
           </Box>
           <Chip
@@ -105,6 +125,32 @@ export function EstimateSummaryCard({ result, loanBalance, sellingCostPercent, e
             sx={{ maxWidth: '100%' }}
           />
         </Stack>
+
+        <Paper
+          variant="outlined"
+          sx={{
+            p: { xs: 2.5, md: 3 },
+            borderRadius: 4,
+            borderColor: 'success.light',
+            bgcolor: 'rgba(46, 125, 50, 0.05)',
+            overflow: 'hidden',
+          }}
+        >
+          <Stack spacing={1.25} sx={{ minWidth: 0 }}>
+            <Typography variant="overline" color="success.main">
+              Most important number
+            </Typography>
+            <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+              Net deployable equity
+            </Typography>
+            <Typography variant="h3" sx={{ color: 'success.main', lineHeight: 1.05, overflowWrap: 'anywhere' }}>
+              {netDeployableEquity === null ? 'Unavailable' : formatCurrency(netDeployableEquity)}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ overflowWrap: 'anywhere' }}>
+              Estimated current value minus loan balance and selling costs — this is the amount most relevant for a sell-and-redeploy strategy.
+            </Typography>
+          </Stack>
+        </Paper>
 
         <Grid container spacing={2}>
           <Grid size={{ xs: 12, sm: 6, xl: 3 }}>
@@ -135,89 +181,90 @@ export function EstimateSummaryCard({ result, loanBalance, sellingCostPercent, e
           </Grid>
         </Grid>
 
-        <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 4 }}>
-          <Stack spacing={2}>
-            <Box>
+        <Paper variant="outlined" sx={{ p: { xs: 2.5, md: 3 }, borderRadius: 4, overflow: 'hidden' }}>
+          <Stack spacing={2} sx={{ minWidth: 0 }}>
+            <Box sx={{ minWidth: 0 }}>
               <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                How usable equity is calculated
+                Supporting calculation detail
               </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, overflowWrap: 'anywhere' }}>
                 The detail below separates the hold scenario from the sell-and-redeploy scenario.
               </Typography>
             </Box>
 
             <Grid container spacing={3}>
               <Grid size={{ xs: 12, md: 6 }}>
-                <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
-                  Hold position
-                </Typography>
-                <Box>
-                  <DetailRow
-                    label="Property increase"
-                    value={increaseAmount === null ? 'Unavailable' : formatCurrency(increaseAmount)}
-                    helper={
-                      result.result.growthPercent === null
-                        ? 'Growth estimate unavailable'
-                        : `${formatPercent(result.result.growthPercent)} year-on-year`
-                    }
-                    strong={isUp}
-                  />
-                  <DetailRow
-                    label="Retained equity buffer %"
-                    value={formatPercent(retainedEquityPercent)}
-                  />
-                  <DetailRow
-                    label="Retained equity amount"
-                    value={retainedEquityAmount === null ? 'Unavailable' : formatCurrency(retainedEquityAmount)}
-                  />
-                  <DetailRow
-                    label="Annual interest-only cost"
-                    value={formatCurrency(annualInterestOnlyCost)}
-                    helper={`${existingLoanInterestRate.toFixed(1)}% of current loan balance`}
-                  />
-                  <DetailRow
-                    label="Usable equity if held"
-                    value={usableEquityIfHeld === null ? 'Unavailable' : formatCurrency(usableEquityIfHeld)}
-                    strong
-                  />
-                </Box>
+                <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 3, height: '100%', overflow: 'hidden' }}>
+                  <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+                    Hold position
+                  </Typography>
+                  <Box>
+                    <DetailRow
+                      label="Property increase"
+                      value={increaseAmount === null ? 'Unavailable' : formatCurrency(increaseAmount)}
+                      helper={
+                        result.result.growthPercent === null
+                          ? 'Growth estimate unavailable'
+                          : `${formatPercent(result.result.growthPercent)} year-on-year`
+                      }
+                      strong={isUp}
+                    />
+                    <DetailRow label="Retained equity buffer %" value={formatPercent(retainedEquityPercent)} />
+                    <DetailRow
+                      label="Retained equity amount"
+                      value={retainedEquityAmount === null ? 'Unavailable' : formatCurrency(retainedEquityAmount)}
+                    />
+                    <DetailRow
+                      label="Annual interest-only cost"
+                      value={formatCurrency(annualInterestOnlyCost)}
+                      helper={`${existingLoanInterestRate.toFixed(1)}% of current loan balance`}
+                    />
+                    <DetailRow
+                      label="Usable equity if held"
+                      value={usableEquityIfHeld === null ? 'Unavailable' : formatCurrency(usableEquityIfHeld)}
+                      strong
+                    />
+                  </Box>
+                </Paper>
               </Grid>
 
               <Grid size={{ xs: 12, md: 6 }}>
-                <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
-                  Sell and redeploy position
-                </Typography>
-                <Box>
-                  <DetailRow
-                    label="Estimated selling costs"
-                    value={estimatedSellingCosts === null ? 'Unavailable' : formatCurrency(estimatedSellingCosts)}
-                    helper={`${sellingCostPercent.toFixed(1)}% of estimated current value`}
-                  />
-                  <DetailRow
-                    label="Net deployable equity"
-                    value={netDeployableEquity === null ? 'Unavailable' : formatCurrency(netDeployableEquity)}
-                    helper="Estimated current value minus loan balance and selling costs"
-                    strong
-                  />
-                </Box>
+                <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 3, height: '100%', overflow: 'hidden' }}>
+                  <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+                    Sell and redeploy position
+                  </Typography>
+                  <Box>
+                    <DetailRow
+                      label="Estimated selling costs"
+                      value={estimatedSellingCosts === null ? 'Unavailable' : formatCurrency(estimatedSellingCosts)}
+                      helper={`${sellingCostPercent.toFixed(1)}% of estimated current value`}
+                    />
+                    <DetailRow
+                      label="Net deployable equity"
+                      value={netDeployableEquity === null ? 'Unavailable' : formatCurrency(netDeployableEquity)}
+                      helper="Estimated current value minus loan balance and selling costs"
+                      strong
+                    />
+                  </Box>
+                </Paper>
               </Grid>
             </Grid>
           </Stack>
         </Paper>
 
         {result.assumptions.length ? (
-          <Box>
+          <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 4, overflow: 'hidden' }}>
             <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
               Methodology notes
             </Typography>
-            <Stack spacing={0.5}>
+            <Stack spacing={0.5} sx={{ minWidth: 0 }}>
               {result.assumptions.slice(0, 2).map((assumption) => (
-                <Typography key={assumption} variant="body2" color="text.secondary">
+                <Typography key={assumption} variant="body2" color="text.secondary" sx={{ overflowWrap: 'anywhere' }}>
                   • {assumption}
                 </Typography>
               ))}
             </Stack>
-          </Box>
+          </Paper>
         ) : null}
 
         {result.errors.length ? <Alert severity="warning">{result.errors.join(' · ')}</Alert> : null}
