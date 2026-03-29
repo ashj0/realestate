@@ -13,11 +13,11 @@ export function AlignedAnalysisRow({ left, right }: AlignedAnalysisRowProps) {
         display: 'grid',
         gap: 2,
         gridTemplateColumns: { xs: '1fr', lg: 'minmax(0, 7fr) minmax(320px, 3fr)' },
-        alignItems: 'stretch',
+        alignItems: 'start',
       }}
     >
       <Box sx={{ minWidth: 0, display: 'flex' }}>{left}</Box>
-      <Box sx={{ minWidth: 0, display: 'flex' }}>{right}</Box>
+      <Box sx={{ minWidth: 0, display: 'flex', alignSelf: 'start' }}>{right}</Box>
     </Box>
   );
 }
