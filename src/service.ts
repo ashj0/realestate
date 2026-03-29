@@ -58,6 +58,56 @@ function determineConfidence(siteEstimates: PropertyGrowthResult['siteEstimates'
   return 'low';
 }
 
+function appendResolutionNotes(
+  siteEstimates: PropertyGrowthResult['siteEstimates'],
+  resolvedKnownUrls: Awaited<ReturnType<typeof resolveKnownUrls>>,
+  suburbUrls: { realestate: string; domain: string; property: string }
+) {
+  const mappings = [
+    {
+      estimate: siteEstimates.realestate_com_au,
+      resolved: resolvedKnownUrls.realestate,
+      fallbackUrl: suburbUrls.realestate,
+      label: 'realestate.com.au'
+    },
+    {
+      estimate: siteEstimates.domain_com_au,
+      resolved: resolvedKnownUrls.domain,
+      fallbackUrl: suburbUrls.domain,
+      label: 'domain.com.au'
+    },
+    {
+      estimate: siteEstimates.property_com_au,
+      resolved: resolvedKnownUrls.property,
+      fallbackUrl: suburbUrls.property,
+      label: 'property.com.au'
+    }
+  ] as const;
+
+  for (const mapping of mappings) {
+    if (mapping.resolved.resolution === 'provided') {
+      mapping.estimate.notes.unshift(`URL resolution: using caller-provided property URL`);
+    } else if (mapping.resolved.resolution === 'resolved-property') {
+      mapping.estimate.notes.unshift(`URL resolution: matched property URL`);
+      if (mapping.resolved.matchedCandidate) {
+        mapping.estimate.notes.push(`Matched candidate: ${mapping.resolved.matchedCandidate}`);
+      }
+      if (mapping.resolved.searchUrl) {
+        mapping.estimate.notes.push(`Search page: ${mapping.resolved.searchUrl}`);
+      }
+    } else {
+      mapping.estimate.notes.unshift(`URL resolution: fallback to suburb/site page`);
+      mapping.estimate.notes.push(`Fallback URL: ${mapping.fallbackUrl}`);
+      if (mapping.resolved.reason) {
+        mapping.estimate.notes.push(mapping.resolved.reason);
+      }
+      if (mapping.resolved.searchUrl) {
+        mapping.estimate.notes.push(`Search page: ${mapping.resolved.searchUrl}`);
+      }
+    }
+  }
+}
+
 export async function estimatePropertyGrowth(input: PropertyGrowthInput, _proxyUrl: string): Promise<PropertyGrowthResult> {
   const errors: string[] = [];
   const assumptions: string[] = [];
@@ -71,9 +121,9 @@ export async function estimatePropertyGrowth(input: PropertyGrowthInput, _proxyU
 
   const resolvedKnownUrls = await resolveKnownUrls(input, apiKey);
   const urls = {
-    realestate: resolvedKnownUrls.realestate ?? suburbUrls.realestate,
-    domain: resolvedKnownUrls.domain ?? suburbUrls.domain,
-    property: resolvedKnownUrls.property ?? suburbUrls.property
+    realestate: resolvedKnownUrls.realestate.url ?? suburbUrls.realestate,
+    domain: resolvedKnownUrls.domain.url ?? suburbUrls.domain,
+    property: resolvedKnownUrls.property.url ?? suburbUrls.property
   };
 
   const siteEstimates = emptySiteEstimates(input, urls);
@@ -99,6 +149,8 @@ export async function estimatePropertyGrowth(input: PropertyGrowthInput, _proxyU
       .catch((error: Error) => errors.push(`property.com.au: ${error.message}`))
   ]);
 
+  appendResolutionNotes(siteEstimates, resolvedKnownUrls, suburbUrls);
+
   const { values, sitesUsed } = collectGrowths(siteEstimates);
   const growthPercent = average(values);
   const currentValuation = growthPercent === null ? null : Math.round(input.lastYearValuation * (1 + growthPercent / 100));
@@ -119,10 +171,7 @@ export async function estimatePropertyGrowth(input: PropertyGrowthInput, _proxyU
     assumptions.push(`Using unit median growth (${siteEstimates.property_com_au.suburbGrowthPercent}%) from property.com.au`);
   }
 
-  const { knownUrls: _knownUrls, state: _state, postCode: _postCode, ...publicInput } = {
-    ...input,
-    knownUrls: resolvedKnownUrls
-  };
+  const { knownUrls: _knownUrls, state: _state, postCode: _postCode, ...publicInput } = input;
 
   const output: PropertyGrowthResult = {
     input: publicInput,

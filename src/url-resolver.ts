@@ -4,10 +4,18 @@ import { slugifySegment } from './location.js';
 import { normalizeWhitespace } from './utils.js';
 import type { PropertyGrowthInput } from './types.js';
 
-interface ResolvedKnownUrls {
-  realestate?: string;
-  domain?: string;
-  property?: string;
+export interface ResolvedSiteUrl {
+  url?: string;
+  resolution: 'provided' | 'resolved-property' | 'fallback-suburb';
+  searchUrl?: string;
+  matchedCandidate?: string;
+  reason?: string;
+}
+
+export interface ResolvedKnownUrls {
+  realestate: ResolvedSiteUrl;
+  domain: ResolvedSiteUrl;
+  property: ResolvedSiteUrl;
 }
 
 interface CandidateLink {
@@ -75,7 +83,7 @@ function uniqueCandidates(candidates: CandidateLink[]): CandidateLink[] {
   return output;
 }
 
-function extractMatchingUrl(content: string, baseUrl: string, input: PropertyGrowthInput, site: 'realestate' | 'domain' | 'property'): string | undefined {
+function extractMatchingUrl(content: string, baseUrl: string, input: PropertyGrowthInput, site: 'realestate' | 'domain' | 'property'): { url?: string; matchedCandidate?: string; reason: string } {
   const $ = load(content);
   const selectors = [
     'a[href*="realestate.com.au"]',
@@ -111,7 +119,15 @@ function extractMatchingUrl(content: string, baseUrl: string, input: PropertyGro
     .filter((candidate) => candidate.score > 0)
     .sort((a, b) => b.score - a.score);
 
-  return ranked[0]?.url;
+  if (!ranked.length) {
+    return { reason: 'No confident property URL match found from provider search results' };
+  }
+
+  return {
+    url: ranked[0].url,
+    matchedCandidate: ranked[0].text || ranked[0].url,
+    reason: `Resolved property URL from provider search (score ${ranked[0].score})`
+  };
 }
 
 function buildSearchUrl(input: PropertyGrowthInput, site: 'realestate' | 'domain' | 'property'): string {
@@ -129,26 +145,42 @@ function buildSearchUrl(input: PropertyGrowthInput, site: 'realestate' | 'domain
 }
 
 export async function resolveKnownUrls(input: PropertyGrowthInput, apiKey: string): Promise<ResolvedKnownUrls> {
-  const resolved: ResolvedKnownUrls = { ...input.knownUrls };
+  const resolved: ResolvedKnownUrls = {
+    realestate: input.knownUrls?.realestate
+      ? { url: input.knownUrls.realestate, resolution: 'provided', reason: 'Using caller-provided property URL' }
+      : { resolution: 'fallback-suburb' },
+    domain: input.knownUrls?.domain
+      ? { url: input.knownUrls.domain, resolution: 'provided', reason: 'Using caller-provided property URL' }
+      : { resolution: 'fallback-suburb' },
+    property: input.knownUrls?.property
+      ? { url: input.knownUrls.property, resolution: 'provided', reason: 'Using caller-provided property URL' }
+      : { resolution: 'fallback-suburb' },
+  };
 
   await Promise.all([
     (async () => {
-      if (resolved.realestate) return;
+      if (resolved.realestate.url) return;
       const searchUrl = buildSearchUrl(input, 'realestate');
-      const content = await fetchScrapflyContent(searchUrl, apiKey);
-      resolved.realestate = extractMatchingUrl(content, searchUrl, input, 'realestate');
+      const match = extractMatchingUrl(await fetchScrapflyContent(searchUrl, apiKey), searchUrl, input, 'realestate');
+      resolved.realestate = match.url
+        ? { url: match.url, resolution: 'resolved-property', searchUrl, matchedCandidate: match.matchedCandidate, reason: match.reason }
+        : { resolution: 'fallback-suburb', searchUrl, reason: match.reason };
     })(),
     (async () => {
-      if (resolved.domain) return;
+      if (resolved.domain.url) return;
       const searchUrl = buildSearchUrl(input, 'domain');
-      const content = await fetchScrapflyContent(searchUrl, apiKey);
-      resolved.domain = extractMatchingUrl(content, searchUrl, input, 'domain');
+      const match = extractMatchingUrl(await fetchScrapflyContent(searchUrl, apiKey), searchUrl, input, 'domain');
+      resolved.domain = match.url
+        ? { url: match.url, resolution: 'resolved-property', searchUrl, matchedCandidate: match.matchedCandidate, reason: match.reason }
+        : { resolution: 'fallback-suburb', searchUrl, reason: match.reason };
     })(),
     (async () => {
-      if (resolved.property) return;
+      if (resolved.property.url) return;
       const searchUrl = buildSearchUrl(input, 'property');
-      const content = await fetchScrapflyContent(searchUrl, apiKey);
-      resolved.property = extractMatchingUrl(content, searchUrl, input, 'property');
+      const match = extractMatchingUrl(await fetchScrapflyContent(searchUrl, apiKey), searchUrl, input, 'property');
+      resolved.property = match.url
+        ? { url: match.url, resolution: 'resolved-property', searchUrl, matchedCandidate: match.matchedCandidate, reason: match.reason }
+        : { resolution: 'fallback-suburb', searchUrl, reason: match.reason };
     })()
   ]);
 
