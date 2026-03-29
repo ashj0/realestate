@@ -148,7 +148,7 @@ export default function App() {
                 </Box>
               </Box>
 
-              <Box sx={{ maxWidth: { xs: '100%', lg: '70%' } }}>
+              <Box sx={{ width: '100%' }}>
                 <SourceEstimateList
                   siteEstimates={result.siteEstimates}
                   selectedComparables={result.selectedComparables}
