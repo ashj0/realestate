@@ -60,7 +60,7 @@ function renderComparableRows(rows: ComparableRecord[]) {
   if (!rows.length) {
     return (
       <TableRow>
-        <TableCell colSpan={6} sx={{ color: 'text.secondary' }}>
+        <TableCell align="center" colSpan={6} sx={{ color: 'text.secondary' }}>
           No comparable properties returned.
         </TableCell>
       </TableRow>
@@ -69,11 +69,11 @@ function renderComparableRows(rows: ComparableRecord[]) {
 
   return rows.map((row, index) => (
     <TableRow key={`${row.address}-${row.saleDate ?? index}`} hover>
-      <TableCell>{row.address}</TableCell>
-      <TableCell>{row.source ?? 'Unknown'}</TableCell>
-      <TableCell>{row.saleDate ? formatDisplayDate(row.saleDate) : '—'}</TableCell>
-      <TableCell>{row.salePrice != null ? formatCurrency(row.salePrice) : '—'}</TableCell>
-      <TableCell>
+      <TableCell align="center">{row.address}</TableCell>
+      <TableCell align="center">{row.source ?? 'Unknown'}</TableCell>
+      <TableCell align="center">{row.saleDate ? formatDisplayDate(row.saleDate) : '—'}</TableCell>
+      <TableCell align="center">{row.salePrice != null ? formatCurrency(row.salePrice) : '—'}</TableCell>
+      <TableCell align="center">
         {row.sourceUrl ? (
           <Link href={row.sourceUrl} target="_blank" rel="noreferrer" underline="hover">
             Property link
@@ -82,7 +82,7 @@ function renderComparableRows(rows: ComparableRecord[]) {
           '—'
         )}
       </TableCell>
-      <TableCell>
+      <TableCell align="center">
         {row.sourceUrl ? (
           <Button
             size="small"
@@ -159,10 +159,10 @@ export function SourceEstimateList({ siteEstimates, selectedComparables }: Sourc
                 {soldHistoryRows.length ? (
                   soldHistoryRows.map((row, index) => (
                     <TableRow key={`${row.source}-${row.date ?? index}`} hover>
-                      <TableCell>{row.date ? formatDisplayDate(row.date) : '—'}</TableCell>
-                      <TableCell>{row.price === null ? '—' : formatCurrency(row.price)}</TableCell>
-                      <TableCell>{row.source ?? 'Unknown'}</TableCell>
-                      <TableCell>
+                      <TableCell align="center">{row.date ? formatDisplayDate(row.date) : '—'}</TableCell>
+                      <TableCell align="center">{row.price === null ? '—' : formatCurrency(row.price)}</TableCell>
+                      <TableCell align="center">{row.source ?? 'Unknown'}</TableCell>
+                      <TableCell align="center">
                         {row.sourceUrl ? (
                           <Link href={row.sourceUrl} target="_blank" rel="noreferrer" underline="hover">
                             View property
@@ -175,7 +175,7 @@ export function SourceEstimateList({ siteEstimates, selectedComparables }: Sourc
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={4} sx={{ color: 'text.secondary' }}>
+                    <TableCell align="center" colSpan={4} sx={{ color: 'text.secondary' }}>
                       No sold history returned.
                     </TableCell>
                   </TableRow>

@@ -54,7 +54,7 @@ export function SourceBreakdown({ siteEstimates }: SourceBreakdownProps) {
                 </Stack>
 
                 {site.sourceUrl ? (
-                  <Box sx={{ ml: { xs: 0, md: 2.5 } }}>
+                  <Box sx={{ ml: { xs: 0, md: 5 }, pl: { xs: 0, md: 1 } }}>
                     <Button
                       variant="text"
                       endIcon={<LaunchRoundedIcon />}
