@@ -7,6 +7,17 @@ export const formatCurrency = (value: number) =>
 
 export const formatPercent = (value: number) => `${value.toFixed(1)}%`;
 
+export const formatNumberInput = (value: string) => {
+  const digits = value.replace(/[^\d]/g, '');
+  if (!digits) return '';
+
+  return new Intl.NumberFormat('en-AU', {
+    maximumFractionDigits: 0,
+  }).format(Number(digits));
+};
+
+export const parseNumberInput = (value: string) => value.replace(/[^\d]/g, '');
+
 const monthLookup: Record<string, number> = {
   JAN: 0,
   FEB: 1,

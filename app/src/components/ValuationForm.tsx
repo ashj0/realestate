@@ -1,5 +1,6 @@
 import AutoGraphRoundedIcon from '@mui/icons-material/AutoGraphRounded';
 import { Button, Paper, Stack, TextField, Typography } from '@mui/material';
+import { formatNumberInput, parseNumberInput } from '../utils';
 
 interface ValuationFormProps {
   valuation: string;
@@ -24,18 +25,18 @@ export function ValuationForm({
         <Typography variant="h6">Enter last year&apos;s valuation</Typography>
         <TextField
           label="Last year's valuation"
-          value={valuation}
-          onChange={(event) => onValuationChange(event.target.value)}
-          placeholder="e.g. 1850000"
-          type="number"
+          value={formatNumberInput(valuation)}
+          onChange={(event) => onValuationChange(parseNumberInput(event.target.value))}
+          placeholder="e.g. 1,850,000"
+          inputMode="numeric"
           fullWidth
         />
         <TextField
           label="Loan principal"
-          value={principal}
-          onChange={(event) => onPrincipalChange(event.target.value)}
-          placeholder="e.g. 400000"
-          type="number"
+          value={formatNumberInput(principal)}
+          onChange={(event) => onPrincipalChange(parseNumberInput(event.target.value))}
+          placeholder="e.g. 400,000"
+          inputMode="numeric"
           fullWidth
         />
         <Button
