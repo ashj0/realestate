@@ -192,8 +192,8 @@ export function SearchPanel({ options, selected, onChange, mapOpen, onMapOpen, o
 
   return (
     <>
-      <Paper sx={{ p: selected ? 2.25 : 3.5, width: '100%' }}>
-        <Stack spacing={selected ? 1.5 : 3}>
+      <Paper sx={{ p: selected && !expanded ? 1.75 : selected ? 2.25 : 3.5, width: '100%' }}>
+        <Stack spacing={selected && !expanded ? 1 : selected ? 1.5 : 3}>
           <Stack direction="row" justifyContent="space-between" alignItems="center" gap={2}>
             <Box>
               <Typography variant={selected ? 'h6' : 'h5'} gutterBottom={!selected}>
@@ -201,7 +201,9 @@ export function SearchPanel({ options, selected, onChange, mapOpen, onMapOpen, o
               </Typography>
               <Typography color="text.secondary" variant="body2">
                 {selected
-                  ? `Selected: ${selected.address}`
+                  ? expanded
+                    ? `Selected: ${selected.address}`
+                    : selected.address
                   : 'Type an address and pick from the live dropdown, or choose the property directly on the map.'}
               </Typography>
             </Box>
