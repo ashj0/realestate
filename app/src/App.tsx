@@ -87,31 +87,36 @@ export default function App() {
         <Stack spacing={2.5}>
           <Header />
 
-          <Grid container spacing={2} alignItems="stretch">
-            <Grid size={{ xs: 12, lg: 8 }}>
-              <Stack spacing={2} sx={{ height: '100%' }}>
-                <SearchPanel
-                  options={propertyOptions}
-                  selected={selectedProperty}
-                  onChange={setSelectedProperty}
-                  mapOpen={showMap}
-                  onMapOpen={() => setShowMap(true)}
-                  onMapClose={() => setShowMap(false)}
-                  apiBaseUrl={API_BASE_URL}
-                />
-                <SelectedSuburbCard property={selectedProperty} />
-              </Stack>
-            </Grid>
+          <Box
+            sx={{
+              display: 'grid',
+              gap: 2,
+              gridTemplateColumns: { xs: '1fr', lg: '7fr 3fr' },
+              alignItems: 'stretch',
+            }}
+          >
+            <Stack spacing={2} sx={{ height: '100%' }}>
+              <SearchPanel
+                options={propertyOptions}
+                selected={selectedProperty}
+                onChange={setSelectedProperty}
+                mapOpen={showMap}
+                onMapOpen={() => setShowMap(true)}
+                onMapClose={() => setShowMap(false)}
+                apiBaseUrl={API_BASE_URL}
+              />
+              <SelectedSuburbCard property={selectedProperty} />
+            </Stack>
 
-            <Grid size={{ xs: 12, lg: 4 }} sx={{ display: 'flex' }}>
+            <Box sx={{ display: 'flex' }}>
               <ValuationForm
                 valuation={lastYearValuation}
                 onChange={setLastYearValuation}
                 disabled={!canGenerate || loading}
                 onSubmit={handleGenerateEstimate}
               />
-            </Grid>
-          </Grid>
+            </Box>
+          </Box>
 
           {loading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
@@ -123,14 +128,21 @@ export default function App() {
 
           {result ? (
             <Stack spacing={2}>
-              <Grid container spacing={2} alignItems="stretch">
-                <Grid size={{ xs: 12, lg: 8 }} sx={{ display: 'flex' }}>
+              <Box
+                sx={{
+                  display: 'grid',
+                  gap: 2,
+                  gridTemplateColumns: { xs: '1fr', lg: '7fr 3fr' },
+                  alignItems: 'stretch',
+                }}
+              >
+                <Box sx={{ display: 'flex' }}>
                   <EstimateSummaryCard result={result} />
-                </Grid>
-                <Grid size={{ xs: 12, lg: 4 }} sx={{ display: 'flex' }}>
+                </Box>
+                <Box sx={{ display: 'flex' }}>
                   <SourceBreakdown siteEstimates={result.siteEstimates} />
-                </Grid>
-              </Grid>
+                </Box>
+              </Box>
 
               <SourceEstimateList
                 siteEstimates={result.siteEstimates}
