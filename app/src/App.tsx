@@ -41,6 +41,7 @@ export default function App() {
   const [result, setResult] = useState<EstimateApiResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [manualProperties, setManualProperties] = useState<PropertyOption[]>([]);
 
   const canGenerate = useMemo(() => {
     return Boolean(
@@ -194,16 +195,18 @@ export default function App() {
           >
             <Stack spacing={2} sx={{ minWidth: 0 }}>
               <SearchPanel
-                options={propertyOptions}
+                options={[...manualProperties, ...propertyOptions]}
                 selected={selectedProperty}
                 onChange={setSelectedProperty}
                 onManualSubmit={(value) => {
-                  setSelectedProperty({
+                  const manualProperty: PropertyOption = {
                     ...value,
                     lat: -31.9523,
                     lng: 115.8613,
                     isManual: true,
-                  });
+                  };
+                  setManualProperties((current) => [manualProperty, ...current.filter((item) => item.id !== manualProperty.id)]);
+                  setSelectedProperty(manualProperty);
                   setResult(null);
                   setError(null);
                 }}

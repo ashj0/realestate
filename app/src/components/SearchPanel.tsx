@@ -5,6 +5,7 @@ import PlaceRoundedIcon from '@mui/icons-material/PlaceRounded';
 import MapRoundedIcon from '@mui/icons-material/MapRounded';
 import EditLocationAltRoundedIcon from '@mui/icons-material/EditLocationAltRounded';
 import {
+  Alert,
   Autocomplete,
   Box,
   Button,
@@ -163,6 +164,7 @@ export function SearchPanel({ options, selected, onChange, onManualSubmit, mapOp
   const [manualState, setManualState] = useState('WA');
   const [manualPostcode, setManualPostcode] = useState('');
   const [manualPropertyType, setManualPropertyType] = useState<'house' | 'unit'>('unit');
+  const [manualSuccessMessage, setManualSuccessMessage] = useState('');
 
   useEffect(() => {
     setAutocompleteOptions((current) => {
@@ -252,6 +254,7 @@ export function SearchPanel({ options, selected, onChange, onManualSubmit, mapOp
     });
 
     setSearchText(fullAddress);
+    setManualSuccessMessage(`Manual property selected: ${fullAddress}`);
     setManualDialogOpen(false);
     setExpanded(false);
   }
@@ -285,6 +288,8 @@ export function SearchPanel({ options, selected, onChange, onManualSubmit, mapOp
 
           <Collapse in={expanded || !selected}>
             <Stack spacing={2.5}>
+              {manualSuccessMessage ? <Alert severity="success">{manualSuccessMessage}</Alert> : null}
+
               <Autocomplete
                 filterOptions={(items) => items}
                 options={autocompleteOptions}
