@@ -3,6 +3,7 @@ import { saveDebugHtml } from './debug.js';
 import { extractDomain, extractProperty, extractRealestate } from './extractors.js';
 import { buildSuburbUrls } from './location.js';
 import { fetchScrapflyContent } from './scrapfly.js';
+import { resolveKnownUrls } from './url-resolver.js';
 import { average, uniqueBy } from './utils.js';
 import { validateOutput } from './validation.js';
 
@@ -61,19 +62,21 @@ export async function estimatePropertyGrowth(input: PropertyGrowthInput, _proxyU
   const errors: string[] = [];
   const assumptions: string[] = [];
   const suburbUrls = buildSuburbUrls(input);
-  const urls = {
-    realestate: input.knownUrls?.realestate ?? suburbUrls.realestate,
-    domain: input.knownUrls?.domain ?? suburbUrls.domain,
-    property: input.knownUrls?.property ?? suburbUrls.property
-  };
-
-  const siteEstimates = emptySiteEstimates(input, urls);
 
   const apiKey = process.env.SCRAPFLY_API_KEY;
 
   if (!apiKey) {
     throw new Error('SCRAPFLY_API_KEY environment variable is required');
   }
+
+  const resolvedKnownUrls = await resolveKnownUrls(input, apiKey);
+  const urls = {
+    realestate: resolvedKnownUrls.realestate ?? suburbUrls.realestate,
+    domain: resolvedKnownUrls.domain ?? suburbUrls.domain,
+    property: resolvedKnownUrls.property ?? suburbUrls.property
+  };
+
+  const siteEstimates = emptySiteEstimates(input, urls);
 
   await Promise.all([
     fetchScrapflyContent(urls.realestate, apiKey)
@@ -116,7 +119,10 @@ export async function estimatePropertyGrowth(input: PropertyGrowthInput, _proxyU
     assumptions.push(`Using unit median growth (${siteEstimates.property_com_au.suburbGrowthPercent}%) from property.com.au`);
   }
 
-  const { knownUrls: _knownUrls, state: _state, postCode: _postCode, ...publicInput } = input;
+  const { knownUrls: _knownUrls, state: _state, postCode: _postCode, ...publicInput } = {
+    ...input,
+    knownUrls: resolvedKnownUrls
+  };
 
   const output: PropertyGrowthResult = {
     input: publicInput,
