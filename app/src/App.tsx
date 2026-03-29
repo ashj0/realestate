@@ -28,6 +28,7 @@ export default function App() {
   const [loanBalance, setLoanBalance] = useState('400000');
   const [sellingCostPercent, setSellingCostPercent] = useState('3');
   const [existingLoanInterestRate, setExistingLoanInterestRate] = useState('6');
+  const [retainedEquityPercent, setRetainedEquityPercent] = useState('20');
   const [otpPurchasePrice, setOtpPurchasePrice] = useState('750000');
   const [otpPropertyCount, setOtpPropertyCount] = useState('2');
   const [otpDepositPercent, setOtpDepositPercent] = useState('10');
@@ -47,9 +48,15 @@ export default function App() {
       Number(lastYearValuation) > 0 &&
       Number(loanBalance) >= 0 &&
       Number(sellingCostPercent) >= 0 &&
-      Number(existingLoanInterestRate) >= 0
+      Number(existingLoanInterestRate) >= 0 &&
+      Number(retainedEquityPercent) >= 0
     );
-  }, [selectedProperty, lastYearValuation, loanBalance, sellingCostPercent, existingLoanInterestRate]);
+  }, [selectedProperty, lastYearValuation, loanBalance, sellingCostPercent, existingLoanInterestRate, retainedEquityPercent]);
+
+  const totalEquity = useMemo(() => {
+    if (!result?.result.currentValuation) return null;
+    return result.result.currentValuation - (Number(loanBalance) || 0);
+  }, [result, loanBalance]);
 
   const netDeployableEquity = useMemo(() => {
     if (!result?.result.currentValuation) return null;
@@ -57,6 +64,12 @@ export default function App() {
     const sellingCosts = currentValuation * ((Number(sellingCostPercent) || 0) / 100);
     return currentValuation - (Number(loanBalance) || 0) - sellingCosts;
   }, [result, loanBalance, sellingCostPercent]);
+
+  const usableEquityIfHeld = useMemo(() => {
+    if (totalEquity === null || !result?.result.currentValuation) return null;
+    const retainedEquityAmount = result.result.currentValuation * ((Number(retainedEquityPercent) || 0) / 100);
+    return totalEquity - retainedEquityAmount;
+  }, [totalEquity, result, retainedEquityPercent]);
 
   const existingInterestOnlyCost3Years = useMemo(() => {
     const annualInterestOnlyCost = (Number(loanBalance) || 0) * ((Number(existingLoanInterestRate) || 0) / 100);
@@ -109,9 +122,10 @@ export default function App() {
       Number(lastYearValuation) <= 0 ||
       Number(loanBalance) < 0 ||
       Number(sellingCostPercent) < 0 ||
-      Number(existingLoanInterestRate) < 0
+      Number(existingLoanInterestRate) < 0 ||
+      Number(retainedEquityPercent) < 0
     ) {
-      setError('Select a property and enter valid valuation, loan balance, selling costs, and interest values first.');
+      setError('Select a property and enter valid valuation, loan balance, selling costs, interest, and retained equity values first.');
       return;
     }
 
@@ -190,10 +204,12 @@ export default function App() {
                 loanBalance={loanBalance}
                 sellingCostPercent={sellingCostPercent}
                 existingLoanInterestRate={existingLoanInterestRate}
+                retainedEquityPercent={retainedEquityPercent}
                 onValuationChange={setLastYearValuation}
                 onLoanBalanceChange={setLoanBalance}
                 onSellingCostPercentChange={setSellingCostPercent}
                 onExistingLoanInterestRateChange={setExistingLoanInterestRate}
+                onRetainedEquityPercentChange={setRetainedEquityPercent}
                 disabled={!canGenerate || loading}
                 onSubmit={handleGenerateEstimate}
               />
@@ -227,6 +243,7 @@ export default function App() {
                     loanBalance={Number(loanBalance) || 0}
                     sellingCostPercent={Number(sellingCostPercent) || 0}
                     existingLoanInterestRate={Number(existingLoanInterestRate) || 0}
+                    retainedEquityPercent={Number(retainedEquityPercent) || 0}
                   />
                 </Box>
                 <Box sx={{ minWidth: 0, display: 'flex' }}>
@@ -276,6 +293,8 @@ export default function App() {
                 valuationConfidence={result.confidence}
                 growthPercent={result.result.growthPercent}
                 currentValuation={result.result.currentValuation}
+                totalEquity={totalEquity}
+                usableEquityIfHeld={usableEquityIfHeld}
                 netDeployableEquity={netDeployableEquity}
                 totalProjectedGain={otpScenario.totalProjectedGain}
                 totalUpfrontCashNeeded={otpScenario.totalUpfrontCashNeeded}

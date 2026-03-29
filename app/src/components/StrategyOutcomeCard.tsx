@@ -9,6 +9,8 @@ interface StrategyOutcomeCardProps {
   valuationConfidence: 'low' | 'medium' | 'high';
   growthPercent: number | null;
   currentValuation: number | null;
+  totalEquity: number | null;
+  usableEquityIfHeld: number | null;
   netDeployableEquity: number | null;
   totalProjectedGain: number;
   totalUpfrontCashNeeded: number;
@@ -32,12 +34,13 @@ function buildRecommendation(props: StrategyOutcomeCardProps) {
     currentValuation,
     growthPercent,
     existingInterestOnlyCost3Years,
+    usableEquityIfHeld,
   } = props;
 
   const redeployNetOutcome = (netDeployableEquity ?? 0) + totalProjectedGain - principalInterestCost;
   const keepPropertyGross =
     currentValuation === null || growthPercent === null ? null : currentValuation * Math.pow(1 + growthPercent / 100, 3) - currentValuation;
-  const keepPropertyNet = keepPropertyGross === null ? null : keepPropertyGross - existingInterestOnlyCost3Years;
+  const keepPropertyNet = keepPropertyGross === null || usableEquityIfHeld === null ? null : usableEquityIfHeld + keepPropertyGross - existingInterestOnlyCost3Years;
 
   if (netDeployableEquity === null || netDeployableEquity <= 0) {
     return {
@@ -89,7 +92,9 @@ export function StrategyOutcomeCard(props: StrategyOutcomeCardProps) {
       : keepPropertyValueIn3Years - props.currentValuation;
 
   const keepPropertyNetOutcomeIn3Years =
-    keepPropertyGainIn3Years === null ? null : keepPropertyGainIn3Years - props.existingInterestOnlyCost3Years;
+    keepPropertyGainIn3Years === null || props.usableEquityIfHeld === null
+      ? null
+      : props.usableEquityIfHeld + keepPropertyGainIn3Years - props.existingInterestOnlyCost3Years;
 
   const redeployNetOutcomeIn3Years =
     props.netDeployableEquity === null ? null : props.netDeployableEquity + props.totalProjectedGain - props.principalInterestCost;
@@ -142,7 +147,7 @@ export function StrategyOutcomeCard(props: StrategyOutcomeCardProps) {
                   {keepPropertyNetOutcomeIn3Years === null ? 'Unavailable' : formatCurrency(keepPropertyNetOutcomeIn3Years)}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Growth less 3 years of interest-only costs
+                  Usable equity if held + 3-year growth - 3 years interest-only cost
                 </Typography>
               </Stack>
             </Paper>
@@ -178,6 +183,12 @@ export function StrategyOutcomeCard(props: StrategyOutcomeCardProps) {
         <Stack spacing={1}>
           <Typography variant="subtitle2" color="text.secondary">
             Key strategy metrics
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Total equity: {props.totalEquity === null ? 'Unavailable' : formatCurrency(props.totalEquity)}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Usable equity if held: {props.usableEquityIfHeld === null ? 'Unavailable' : formatCurrency(props.usableEquityIfHeld)}
           </Typography>
           <Typography variant="body2" color="text.secondary">
             Net deployable equity: {props.netDeployableEquity === null ? 'Unavailable' : formatCurrency(props.netDeployableEquity)}
