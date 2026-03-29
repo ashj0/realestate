@@ -230,8 +230,6 @@ export function SearchPanel({ options, selected, onChange, onManualSubmit, mapOp
     return Array.from(lookup.values());
   }, [options, autocompleteOptions]);
 
-  const showManualFallback =
-    !manualSelectionActive && !selected?.isManual && !manualDialogOpen && searchText.trim().length >= 3 && !loading && autocompleteOptions.length === 0;
   const suburbHint = suburbPostcodeHints[manualSuburb.trim().toLowerCase()];
   const postcodeLooksValid = manualPostcode.trim().length === 4;
   const postcodeMismatch = Boolean(
@@ -355,19 +353,17 @@ export function SearchPanel({ options, selected, onChange, onManualSubmit, mapOp
                 )}
               />
 
-              {showManualFallback ? (
-                <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 4, bgcolor: 'warning.50' }}>
-                  <Stack spacing={1.5}>
-                    <Typography sx={{ fontWeight: 700 }}>No exact match found</Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      This can happen for apartments and unit addresses. You can enter the property manually and continue.
-                    </Typography>
-                    <Button variant="outlined" startIcon={<EditLocationAltRoundedIcon />} onClick={openManualDialog}>
-                      Enter address manually
-                    </Button>
-                  </Stack>
-                </Paper>
-              ) : null}
+              <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 4, bgcolor: 'warning.50' }}>
+                <Stack spacing={1.5}>
+                  <Typography sx={{ fontWeight: 700 }}>Can&apos;t find the property?</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Apartment and unit addresses may not appear in autocomplete. Use manual entry anytime.
+                  </Typography>
+                  <Button variant="outlined" startIcon={<EditLocationAltRoundedIcon />} onClick={openManualDialog}>
+                    Enter address manually
+                  </Button>
+                </Stack>
+              </Paper>
 
               <Paper
                 variant="outlined"
