@@ -122,12 +122,12 @@ export function SourceEstimateList({ siteEstimates, selectedComparables }: Sourc
             <Table stickyHeader size="small">
               <TableHead>
                 <TableRow>
-                  <TableCell>Name</TableCell>
-                  <TableCell>Site</TableCell>
-                  <TableCell>Sale date</TableCell>
-                  <TableCell>Sale price</TableCell>
-                  <TableCell>Link</TableCell>
-                  <TableCell></TableCell>
+                  <TableCell align="center">Name</TableCell>
+                  <TableCell align="center">Site</TableCell>
+                  <TableCell align="center">Sale date</TableCell>
+                  <TableCell align="center">Sale price</TableCell>
+                  <TableCell align="center">Link</TableCell>
+                  <TableCell align="center"></TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>{renderComparableRows(selectedComparables)}</TableBody>
@@ -149,10 +149,10 @@ export function SourceEstimateList({ siteEstimates, selectedComparables }: Sourc
             <Table stickyHeader size="small">
               <TableHead>
                 <TableRow>
-                  <TableCell>Date</TableCell>
-                  <TableCell>Price</TableCell>
-                  <TableCell>Source</TableCell>
-                  <TableCell>Property</TableCell>
+                  <TableCell align="center">Date</TableCell>
+                  <TableCell align="center">Price</TableCell>
+                  <TableCell align="center">Source</TableCell>
+                  <TableCell align="center">Property</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
