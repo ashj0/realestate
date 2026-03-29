@@ -87,15 +87,15 @@ export default function App() {
         <Stack spacing={2.5}>
           <Header />
 
-          <Box
-            sx={{
-              display: 'grid',
-              gap: 2,
-              gridTemplateColumns: { xs: '1fr', lg: '7fr 3fr' },
-              alignItems: 'stretch',
-            }}
-          >
-            <Stack spacing={2} sx={{ height: '100%' }}>
+          <Stack spacing={2}>
+            <Box
+              sx={{
+                display: 'grid',
+                gap: 2,
+                gridTemplateColumns: { xs: '1fr', lg: '7fr 3fr' },
+                alignItems: 'stretch',
+              }}
+            >
               <SearchPanel
                 options={propertyOptions}
                 selected={selectedProperty}
@@ -105,18 +105,19 @@ export default function App() {
                 onMapClose={() => setShowMap(false)}
                 apiBaseUrl={API_BASE_URL}
               />
-              <SelectedSuburbCard property={selectedProperty} />
-            </Stack>
 
-            <Box sx={{ display: 'flex' }}>
-              <ValuationForm
-                valuation={lastYearValuation}
-                onChange={setLastYearValuation}
-                disabled={!canGenerate || loading}
-                onSubmit={handleGenerateEstimate}
-              />
+              <Box sx={{ display: 'flex', gridRow: { xs: 'auto', lg: 'span 2' } }}>
+                <ValuationForm
+                  valuation={lastYearValuation}
+                  onChange={setLastYearValuation}
+                  disabled={!canGenerate || loading}
+                  onSubmit={handleGenerateEstimate}
+                />
+              </Box>
+
+              <SelectedSuburbCard property={selectedProperty} />
             </Box>
-          </Box>
+          </Stack>
 
           {loading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
