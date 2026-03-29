@@ -110,27 +110,46 @@ export function EstimateSummaryCard({ result, loanBalance, sellingCostPercent, e
       <Stack spacing={3} sx={{ height: '100%', minWidth: 0 }}>
         <Stack direction={{ xs: 'column', xl: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', xl: 'flex-start' }} gap={2}>
           <Box sx={{ minWidth: 0, flex: 1 }}>
-            <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.75, flexWrap: 'wrap' }}>
-              <Typography variant="h5">Current Property Position</Typography>
-              <Chip label="Now" size="small" variant="outlined" />
-            </Stack>
-            <Stack spacing={0.5} sx={{ minWidth: 0 }}>
-              <Typography variant="overline" color="text.secondary">
-                Estimated current value
-              </Typography>
-              <Typography
-                variant="h3"
-                sx={{
-                  color: isUp ? 'success.main' : 'text.primary',
-                  lineHeight: 1.05,
-                  overflowWrap: 'anywhere',
-                }}
-              >
-                {currentValuation === null ? 'Unavailable' : formatCurrency(currentValuation)}
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ overflowWrap: 'anywhere' }}>
-                Based on last year's valuation of {formatCurrency(lastYearValuation)}
-              </Typography>
+            <Stack
+              direction={{ xs: 'column', md: 'row' }}
+              justifyContent="space-between"
+              alignItems={{ xs: 'flex-start', md: 'flex-start' }}
+              gap={2}
+              sx={{ minWidth: 0 }}
+            >
+              <Box sx={{ minWidth: 0, flex: 1 }}>
+                <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.75, flexWrap: 'wrap' }}>
+                  <Typography variant="h5">Current Property Position</Typography>
+                  <Chip label="Now" size="small" variant="outlined" />
+                </Stack>
+                <Typography variant="body2" color="text.secondary" sx={{ overflowWrap: 'anywhere' }}>
+                  Shows what the property is worth today, how much equity sits in it, and how much may actually be deployable.
+                </Typography>
+              </Box>
+
+              <Box sx={{ minWidth: 0, width: { xs: '100%', md: 'auto' }, maxWidth: { xs: '100%', md: 320 } }}>
+                <Typography variant="overline" color="text.secondary">
+                  Estimated current value
+                </Typography>
+                <Typography
+                  variant="h3"
+                  sx={{
+                    color: isUp ? 'success.main' : 'text.primary',
+                    lineHeight: 1.05,
+                    overflowWrap: 'anywhere',
+                    textAlign: { xs: 'left', md: 'right' },
+                  }}
+                >
+                  {currentValuation === null ? 'Unavailable' : formatCurrency(currentValuation)}
+                </Typography>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ overflowWrap: 'anywhere', textAlign: { xs: 'left', md: 'right' } }}
+                >
+                  Based on last year's valuation of {formatCurrency(lastYearValuation)}
+                </Typography>
+              </Box>
             </Stack>
           </Box>
           <Chip
