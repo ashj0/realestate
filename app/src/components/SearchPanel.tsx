@@ -163,15 +163,19 @@ export function SearchPanel({ options, selected, onChange, onManualSubmit, mapOp
   const [manualPropertyType, setManualPropertyType] = useState<'house' | 'unit'>('unit');
 
   useEffect(() => {
-    setSearchText(selected?.address ?? '');
+    if (!manualMode) {
+      setSearchText(selected?.address ?? '');
+    }
     setAutocompleteOptions((current) => {
       if (!selected) return current;
       const next = [selected, ...current.filter((option) => option.id !== selected.id)];
       return next.slice(0, 8);
     });
     setExpanded(!selected);
-    setManualMode(false);
-  }, [selected]);
+    if (!selected) {
+      setManualMode(false);
+    }
+  }, [selected, manualMode]);
 
   useEffect(() => {
     const query = searchText.trim();
@@ -315,6 +319,7 @@ export function SearchPanel({ options, selected, onChange, onManualSubmit, mapOp
                       This can happen for apartments and unit addresses. You can enter the property manually and continue.
                     </Typography>
                     <Button variant="outlined" onClick={() => {
+                      setExpanded(true);
                       setManualMode(true);
                       setManualAddress(searchText.trim());
                     }}>
