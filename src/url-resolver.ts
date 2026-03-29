@@ -49,29 +49,34 @@ function compactAddressQuery(input: PropertyGrowthInput): string {
   return normalizeWhitespace(input.address);
 }
 
-function scoreCandidate(candidate: CandidateLink, input: PropertyGrowthInput): number {
-  const candidateText = normalizeAddress(`${candidate.url} ${candidate.text}`);
+function scoreText(candidateText: string, input: PropertyGrowthInput): number {
+  const normalizedCandidate = normalizeAddress(candidateText);
   const signals = buildAddressSignals(input);
 
-  if (!candidateText) return -1;
+  if (!normalizedCandidate) return -1;
 
   let score = 0;
 
-  if (signals.normalized && candidateText.includes(signals.normalized)) score += 20;
-  if (signals.houseNumber && candidateText.includes(signals.houseNumber)) score += 5;
+  if (signals.normalized && normalizedCandidate.includes(signals.normalized)) score += 20;
+  if (signals.houseNumber && normalizedCandidate.includes(signals.houseNumber)) score += 5;
 
-  const matchedStreetParts = signals.streetParts.filter((part) => part.length >= 3 && candidateText.includes(part));
+  const matchedStreetParts = signals.streetParts.filter((part) => part.length >= 3 && normalizedCandidate.includes(part));
   score += matchedStreetParts.length * 3;
 
-  if (signals.suburb && candidateText.includes(signals.suburb)) score += 3;
-
-  if (candidate.url.endsWith('/property/') || /\/property\/?$/i.test(candidate.url)) score -= 20;
+  if (signals.suburb && normalizedCandidate.includes(signals.suburb)) score += 3;
 
   const strongAddressMatch = Boolean(
-    signals.houseNumber && matchedStreetParts.length >= 1 && candidateText.includes(signals.houseNumber)
+    signals.houseNumber && matchedStreetParts.length >= 1 && normalizedCandidate.includes(signals.houseNumber)
   );
 
-  return strongAddressMatch || candidateText.includes(signals.normalized) ? score : -1;
+  return strongAddressMatch || normalizedCandidate.includes(signals.normalized) ? score : -1;
+}
+
+function scoreCandidate(candidate: CandidateLink, input: PropertyGrowthInput): number {
+  const score = scoreText(`${candidate.url} ${candidate.text}`, input);
+  if (score < 0) return score;
+  if (candidate.url.endsWith('/property/') || /\/property\/?$/i.test(candidate.url)) return score - 20;
+  return score;
 }
 
 function uniqueCandidates(candidates: CandidateLink[]): CandidateLink[] {
@@ -191,11 +196,12 @@ function buildSearchUrls(input: PropertyGrowthInput, site: 'realestate' | 'domai
   ];
 }
 
-async function firstReachableUrl(urls: string[], apiKey: string): Promise<string | undefined> {
+async function firstVerifiedDirectUrl(urls: string[], input: PropertyGrowthInput, apiKey: string): Promise<string | undefined> {
   for (const url of urls) {
     try {
       const content = await fetchScrapflyContent(url, apiKey);
-      if (content && content.length > 5000) {
+      const bodyScore = scoreText(content.slice(0, 20000), input);
+      if (bodyScore > 0) {
         return url;
       }
     } catch {
@@ -207,13 +213,13 @@ async function firstReachableUrl(urls: string[], apiKey: string): Promise<string
 
 async function resolveSiteUrl(input: PropertyGrowthInput, apiKey: string, site: 'realestate' | 'domain' | 'property'): Promise<ResolvedSiteUrl> {
   const directGuesses = buildDirectPropertyUrlGuesses(input, site);
-  const directUrl = await firstReachableUrl(directGuesses, apiKey);
+  const directUrl = await firstVerifiedDirectUrl(directGuesses, input, apiKey);
   if (directUrl) {
     return {
       url: directUrl,
       resolution: 'resolved-property',
       matchedCandidate: directUrl,
-      reason: 'Resolved property URL from direct address pattern'
+      reason: 'Resolved property URL from verified direct address pattern'
     };
   }
 
@@ -240,7 +246,7 @@ async function resolveSiteUrl(input: PropertyGrowthInput, apiKey: string, site: 
   return {
     resolution: 'fallback-suburb',
     searchUrl: searchUrls[0],
-    reason: 'No confident property URL match found from direct guesses or provider search results'
+    reason: 'No confident property URL match found from verified direct guesses or provider search results'
   };
 }
 
