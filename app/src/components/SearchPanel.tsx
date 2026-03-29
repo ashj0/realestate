@@ -3,6 +3,7 @@ import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
 import HomeWorkRoundedIcon from '@mui/icons-material/HomeWorkRounded';
 import PlaceRoundedIcon from '@mui/icons-material/PlaceRounded';
 import MapRoundedIcon from '@mui/icons-material/MapRounded';
+import EditLocationAltRoundedIcon from '@mui/icons-material/EditLocationAltRounded';
 import {
   Autocomplete,
   Box,
@@ -11,6 +12,7 @@ import {
   CircularProgress,
   Collapse,
   Dialog,
+  DialogActions,
   DialogContent,
   DialogTitle,
   IconButton,
@@ -155,7 +157,7 @@ export function SearchPanel({ options, selected, onChange, onManualSubmit, mapOp
   const [autocompleteOptions, setAutocompleteOptions] = useState<PropertyAutocompleteOption[]>(selected ? [selected] : []);
   const [loading, setLoading] = useState(false);
   const [expanded, setExpanded] = useState(!selected);
-  const [manualMode, setManualMode] = useState(false);
+  const [manualDialogOpen, setManualDialogOpen] = useState(false);
   const [manualAddress, setManualAddress] = useState('');
   const [manualSuburb, setManualSuburb] = useState('');
   const [manualState, setManualState] = useState('WA');
@@ -169,15 +171,8 @@ export function SearchPanel({ options, selected, onChange, onManualSubmit, mapOp
       return next.slice(0, 8);
     });
 
-    if (!manualMode) {
-      setSearchText(selected?.address ?? '');
-      setExpanded(!selected);
-    }
-
-    if (!selected) {
-      setManualMode(false);
-      setSearchText('');
-    }
+    setSearchText(selected?.address ?? '');
+    setExpanded(!selected);
   }, [selected]);
 
   useEffect(() => {
@@ -215,33 +210,49 @@ export function SearchPanel({ options, selected, onChange, onManualSubmit, mapOp
     return Array.from(lookup.values());
   }, [options, autocompleteOptions]);
 
-  const showManualFallback = !manualMode && searchText.trim().length >= 3 && !loading && autocompleteOptions.length === 0;
+  const showManualFallback = searchText.trim().length >= 3 && !loading && autocompleteOptions.length === 0;
   const suburbHint = suburbPostcodeHints[manualSuburb.trim().toLowerCase()];
   const postcodeLooksValid = manualPostcode.trim().length === 4;
   const postcodeMismatch = Boolean(
     suburbHint && postcodeLooksValid && (suburbHint.state !== manualState || suburbHint.postcode !== manualPostcode.trim())
   );
+  const canUseManualProperty =
+    manualAddress.trim().length > 0 &&
+    manualSuburb.trim().length > 0 &&
+    manualPostcode.trim().length === 4 &&
+    !postcodeMismatch;
+
+  function openManualDialog() {
+    setManualDialogOpen(true);
+    setManualAddress(searchText.trim());
+    setManualSuburb('Rivervale');
+    setManualState('WA');
+    setManualPostcode('6103');
+    setManualPropertyType('unit');
+  }
 
   function handleManualSubmit() {
     const address = manualAddress.trim();
     const suburb = manualSuburb.trim();
     const postcode = manualPostcode.trim();
 
-    if (!address || !suburb || !manualState || postcode.length < 4) {
+    if (!canUseManualProperty || !manualState) {
       return;
     }
 
+    const fullAddress = `${address}, ${suburb} ${manualState} ${postcode}`;
+
     onManualSubmit({
       id: `manual-${Date.now()}`,
-      address: `${address}, ${suburb} ${manualState} ${postcode}`,
+      address: fullAddress,
       suburb,
       state: manualState,
       postcode,
       propertyType: manualPropertyType,
     });
 
-    setSearchText(`${address}, ${suburb} ${manualState} ${postcode}`);
-    setManualMode(false);
+    setSearchText(fullAddress);
+    setManualDialogOpen(false);
     setExpanded(false);
   }
 
@@ -274,51 +285,49 @@ export function SearchPanel({ options, selected, onChange, onManualSubmit, mapOp
 
           <Collapse in={expanded || !selected}>
             <Stack spacing={2.5}>
-              {!manualMode ? (
-                <Autocomplete
-                  filterOptions={(items) => items}
-                  options={autocompleteOptions}
-                  value={selected}
-                  inputValue={searchText}
-                  onInputChange={(_, value) => setSearchText(value)}
-                  onChange={(_, value) => onChange(value)}
-                  getOptionLabel={(option) => option.address}
-                  isOptionEqualToValue={(option, value) => option.id === value.id}
-                  noOptionsText={searchText.trim().length < 3 ? 'Type at least 3 characters' : 'No matching properties found'}
-                  renderOption={(props, option) => (
-                    <Box component="li" {...props}>
-                      <Stack spacing={0.5} py={0.5}>
-                        <Typography fontWeight={700}>{option.address}</Typography>
-                        <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-                          <Chip size="small" label={`${option.suburb}, ${option.state} ${option.postcode}`} />
-                          <Chip size="small" variant="outlined" icon={<HomeWorkRoundedIcon />} label={option.propertyType} />
-                        </Stack>
+              <Autocomplete
+                filterOptions={(items) => items}
+                options={autocompleteOptions}
+                value={selected}
+                inputValue={searchText}
+                onInputChange={(_, value) => setSearchText(value)}
+                onChange={(_, value) => onChange(value)}
+                getOptionLabel={(option) => option.address}
+                isOptionEqualToValue={(option, value) => option.id === value.id}
+                noOptionsText={searchText.trim().length < 3 ? 'Type at least 3 characters' : 'No matching properties found'}
+                renderOption={(props, option) => (
+                  <Box component="li" {...props}>
+                    <Stack spacing={0.5} py={0.5}>
+                      <Typography fontWeight={700}>{option.address}</Typography>
+                      <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+                        <Chip size="small" label={`${option.suburb}, ${option.state} ${option.postcode}`} />
+                        <Chip size="small" variant="outlined" icon={<HomeWorkRoundedIcon />} label={option.propertyType} />
                       </Stack>
-                    </Box>
-                  )}
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      label="Property"
-                      placeholder="Type an address"
-                      InputProps={{
-                        ...params.InputProps,
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <SearchRoundedIcon />
-                          </InputAdornment>
-                        ),
-                        endAdornment: (
-                          <>
-                            {loading ? <CircularProgress color="inherit" size={18} /> : null}
-                            {params.InputProps.endAdornment}
-                          </>
-                        ),
-                      }}
-                    />
-                  )}
-                />
-              ) : null}
+                    </Stack>
+                  </Box>
+                )}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Property"
+                    placeholder="Type an address"
+                    InputProps={{
+                      ...params.InputProps,
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <SearchRoundedIcon />
+                        </InputAdornment>
+                      ),
+                      endAdornment: (
+                        <>
+                          {loading ? <CircularProgress color="inherit" size={18} /> : null}
+                          {params.InputProps.endAdornment}
+                        </>
+                      ),
+                    }}
+                  />
+                )}
+              />
 
               {showManualFallback ? (
                 <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 4, bgcolor: 'warning.50' }}>
@@ -327,94 +336,12 @@ export function SearchPanel({ options, selected, onChange, onManualSubmit, mapOp
                     <Typography variant="body2" color="text.secondary">
                       This can happen for apartments and unit addresses. You can enter the property manually and continue.
                     </Typography>
-                    <Button variant="outlined" onClick={() => {
-                      setExpanded(true);
-                      setManualMode(true);
-                      setManualAddress(searchText.trim());
-                      setManualSuburb('');
-                      setManualState('WA');
-                      setManualPostcode('');
-                      setManualPropertyType('unit');
-                    }}>
+                    <Button variant="outlined" startIcon={<EditLocationAltRoundedIcon />} onClick={openManualDialog}>
                       Enter address manually
                     </Button>
                   </Stack>
                 </Paper>
               ) : null}
-
-              <Collapse in={manualMode}>
-                <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 4 }}>
-                  <Stack spacing={2}>
-                    <Typography sx={{ fontWeight: 700 }}>Manual property entry</Typography>
-                    <TextField
-                      label="Street address"
-                      value={manualAddress}
-                      onChange={(event) => setManualAddress(event.target.value)}
-                      fullWidth
-                    />
-                    <TextField
-                      label="Suburb"
-                      value={manualSuburb}
-                      onChange={(event) => {
-                        const nextSuburb = event.target.value;
-                        setManualSuburb(nextSuburb);
-                        const hint = suburbPostcodeHints[nextSuburb.trim().toLowerCase()];
-                        if (hint) {
-                          setManualState(hint.state);
-                          setManualPostcode(hint.postcode);
-                        }
-                      }}
-                      fullWidth
-                    />
-                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                      <TextField
-                        select
-                        label="State"
-                        value={manualState}
-                        onChange={(event) => setManualState(event.target.value)}
-                        fullWidth
-                        error={postcodeMismatch}
-                      >
-                        {australianStates.map((state) => (
-                          <MenuItem key={state} value={state}>
-                            {state}
-                          </MenuItem>
-                        ))}
-                      </TextField>
-                      <TextField
-                        label="Postcode"
-                        value={manualPostcode}
-                        onChange={(event) => setManualPostcode(event.target.value.replace(/[^\d]/g, '').slice(0, 4))}
-                        fullWidth
-                        error={postcodeMismatch}
-                        helperText={
-                          postcodeMismatch && suburbHint
-                            ? `${manualSuburb.trim()} is usually ${suburbHint.state} ${suburbHint.postcode}`
-                            : ' '
-                        }
-                      />
-                    </Stack>
-                    <TextField
-                      select
-                      label="Property type"
-                      value={manualPropertyType}
-                      onChange={(event) => setManualPropertyType(event.target.value as 'house' | 'unit')}
-                      fullWidth
-                    >
-                      <MenuItem value="unit">Unit</MenuItem>
-                      <MenuItem value="house">House</MenuItem>
-                    </TextField>
-                    <Stack direction="row" spacing={1.5}>
-                      <Button variant="contained" onClick={handleManualSubmit} disabled={postcodeMismatch}>
-                        Use manual property
-                      </Button>
-                      <Button variant="text" onClick={() => setManualMode(false)}>
-                        Cancel
-                      </Button>
-                    </Stack>
-                  </Stack>
-                </Paper>
-              </Collapse>
 
               <Paper
                 variant="outlined"
@@ -441,6 +368,83 @@ export function SearchPanel({ options, selected, onChange, onManualSubmit, mapOp
           </Collapse>
         </Stack>
       </Paper>
+
+      <Dialog open={manualDialogOpen} onClose={() => setManualDialogOpen(false)} fullWidth maxWidth="sm">
+        <DialogTitle sx={{ pr: 6 }}>
+          Enter property manually
+          <IconButton onClick={() => setManualDialogOpen(false)} sx={{ position: 'absolute', right: 12, top: 12 }}>
+            <CloseRoundedIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} sx={{ pt: 1 }}>
+            <TextField
+              label="Street address"
+              value={manualAddress}
+              onChange={(event) => setManualAddress(event.target.value)}
+              fullWidth
+            />
+            <TextField
+              label="Suburb"
+              value={manualSuburb}
+              onChange={(event) => {
+                const nextSuburb = event.target.value;
+                setManualSuburb(nextSuburb);
+                const hint = suburbPostcodeHints[nextSuburb.trim().toLowerCase()];
+                if (hint) {
+                  setManualState(hint.state);
+                  setManualPostcode(hint.postcode);
+                }
+              }}
+              fullWidth
+            />
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+              <TextField
+                select
+                label="State"
+                value={manualState}
+                onChange={(event) => setManualState(event.target.value)}
+                fullWidth
+                error={postcodeMismatch}
+              >
+                {australianStates.map((state) => (
+                  <MenuItem key={state} value={state}>
+                    {state}
+                  </MenuItem>
+                ))}
+              </TextField>
+              <TextField
+                label="Postcode"
+                value={manualPostcode}
+                onChange={(event) => setManualPostcode(event.target.value.replace(/[^\d]/g, '').slice(0, 4))}
+                fullWidth
+                error={postcodeMismatch}
+                helperText={
+                  postcodeMismatch && suburbHint
+                    ? `${manualSuburb.trim()} is usually ${suburbHint.state} ${suburbHint.postcode}`
+                    : ' '
+                }
+              />
+            </Stack>
+            <TextField
+              select
+              label="Property type"
+              value={manualPropertyType}
+              onChange={(event) => setManualPropertyType(event.target.value as 'house' | 'unit')}
+              fullWidth
+            >
+              <MenuItem value="unit">Unit</MenuItem>
+              <MenuItem value="house">House</MenuItem>
+            </TextField>
+          </Stack>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 3 }}>
+          <Button onClick={() => setManualDialogOpen(false)}>Cancel</Button>
+          <Button variant="contained" onClick={handleManualSubmit} disabled={!canUseManualProperty}>
+            Use manual property
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <PropertyMapDialog
         open={mapOpen}
