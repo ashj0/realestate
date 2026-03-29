@@ -88,10 +88,11 @@ export default function App() {
     const actualUpfrontCash = useDepositBond ? actualUpfrontCashPerProperty : depositAmount;
     const forecastCompletionValue = purchasePrice * Math.pow(1 + annualGrowthPercent / 100, yearsToCompletion);
     const forecastEquityGainPerProperty = forecastCompletionValue - purchasePrice;
-    const projectedEquityPerProperty = actualUpfrontCash + forecastEquityGainPerProperty;
+    const retainedEquityPerProperty = forecastCompletionValue * ((Number(retainedEquityPercent) || 0) / 100);
+    const usableOtpEquityPerProperty = forecastCompletionValue - retainedEquityPerProperty;
     const totalUpfrontCashNeeded = actualUpfrontCash * propertyCount;
     const totalProjectedGain = forecastEquityGainPerProperty * propertyCount;
-    const totalProjectedOtpEquity = projectedEquityPerProperty * propertyCount;
+    const totalUsableOtpEquity = usableOtpEquityPerProperty * propertyCount;
     const fundingSurplusShortfall = netDeployableEquity === null ? null : netDeployableEquity - totalUpfrontCashNeeded;
 
     return {
@@ -104,7 +105,7 @@ export default function App() {
       yearsToCompletion,
       totalUpfrontCashNeeded,
       totalProjectedGain,
-      totalProjectedOtpEquity,
+      totalUsableOtpEquity,
       fundingSurplusShortfall,
     };
   }, [
@@ -117,6 +118,7 @@ export default function App() {
     otpYearsToCompletion,
     useDepositBond,
     netDeployableEquity,
+    retainedEquityPercent,
   ]);
 
   async function handleGenerateEstimate() {
@@ -288,6 +290,7 @@ export default function App() {
                   actualUpfrontCashPerProperty={otpScenario.actualUpfrontCashPerProperty}
                   annualGrowthPercent={otpScenario.annualGrowthPercent}
                   yearsToCompletion={otpScenario.yearsToCompletion}
+                  retainedEquityPercent={Number(retainedEquityPercent) || 0}
                   netDeployableEquity={netDeployableEquity}
                 />
               </Box>
@@ -300,7 +303,7 @@ export default function App() {
                 usableEquityIfHeld={usableEquityIfHeld}
                 netDeployableEquity={netDeployableEquity}
                 totalProjectedGain={otpScenario.totalProjectedGain}
-                totalProjectedOtpEquity={otpScenario.totalProjectedOtpEquity}
+                totalUsableOtpEquity={otpScenario.totalUsableOtpEquity}
                 totalUpfrontCashNeeded={otpScenario.totalUpfrontCashNeeded}
                 fundingSurplusShortfall={otpScenario.fundingSurplusShortfall}
                 principalInterestCost={otpScenario.principalInterestCost}

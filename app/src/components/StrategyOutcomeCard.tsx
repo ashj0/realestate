@@ -13,7 +13,7 @@ interface StrategyOutcomeCardProps {
   usableEquityIfHeld: number | null;
   netDeployableEquity: number | null;
   totalProjectedGain: number;
-  totalProjectedOtpEquity: number;
+  totalUsableOtpEquity: number;
   totalUpfrontCashNeeded: number;
   fundingSurplusShortfall: number | null;
   principalInterestCost: number;
@@ -35,10 +35,10 @@ function buildRecommendation(props: StrategyOutcomeCardProps) {
     growthPercent,
     existingInterestOnlyCost3Years,
     usableEquityIfHeld,
-    totalProjectedOtpEquity,
+    totalUsableOtpEquity,
   } = props;
 
-  const redeployNetOutcome = totalProjectedOtpEquity - principalInterestCost;
+  const redeployNetOutcome = totalUsableOtpEquity - principalInterestCost;
   const keepPropertyGross =
     currentValuation === null || growthPercent === null ? null : currentValuation * Math.pow(1 + growthPercent / 100, 3) - currentValuation;
   const keepPropertyNet = keepPropertyGross === null || usableEquityIfHeld === null ? null : usableEquityIfHeld + keepPropertyGross - existingInterestOnlyCost3Years;
@@ -57,7 +57,7 @@ function buildRecommendation(props: StrategyOutcomeCardProps) {
       label: 'Sell and Redeploy Candidate',
       color: 'success' as const,
       icon: <CheckCircleRoundedIcon />,
-      summary: `Estimated deployable equity appears sufficient to fund ${propertyCount} off-the-plan properties with projected growth of ${formatPercent(annualGrowthPercent)} per year and create a stronger equity position after principal and interest costs.`,
+      summary: `Estimated deployable equity appears sufficient to fund ${propertyCount} off-the-plan properties with projected growth of ${formatPercent(annualGrowthPercent)} per year and create a stronger usable equity position after principal and interest costs.`,
     };
   }
 
@@ -97,7 +97,7 @@ export function StrategyOutcomeCard(props: StrategyOutcomeCardProps) {
       ? null
       : props.usableEquityIfHeld + keepPropertyGainIn3Years - props.existingInterestOnlyCost3Years;
 
-  const redeployNetOutcomeIn3Years = props.totalProjectedOtpEquity - props.principalInterestCost;
+  const redeployNetOutcomeIn3Years = props.totalUsableOtpEquity - props.principalInterestCost;
 
   const strategyDifference =
     keepPropertyNetOutcomeIn3Years === null
@@ -160,7 +160,7 @@ export function StrategyOutcomeCard(props: StrategyOutcomeCardProps) {
                   {formatCurrency(redeployNetOutcomeIn3Years)}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Projected OTP equity position - principal & interest cost
+                  Total usable OTP equity - principal & interest cost
                 </Typography>
               </Stack>
             </Paper>
@@ -194,7 +194,7 @@ export function StrategyOutcomeCard(props: StrategyOutcomeCardProps) {
             Net deployable equity: {props.netDeployableEquity === null ? 'Unavailable' : formatCurrency(props.netDeployableEquity)}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Total projected OTP equity: {formatCurrency(props.totalProjectedOtpEquity)}
+            Total usable OTP equity: {formatCurrency(props.totalUsableOtpEquity)}
           </Typography>
           <Typography variant="body2" color="text.secondary">
             Existing property interest-only cost (3 years): {formatCurrency(props.existingInterestOnlyCost3Years)}

@@ -10,6 +10,7 @@ interface OtpForecastSummaryCardProps {
   actualUpfrontCashPerProperty: number;
   annualGrowthPercent: number;
   yearsToCompletion: number;
+  retainedEquityPercent: number;
   netDeployableEquity: number | null;
 }
 
@@ -21,16 +22,18 @@ export function OtpForecastSummaryCard({
   actualUpfrontCashPerProperty,
   annualGrowthPercent,
   yearsToCompletion,
+  retainedEquityPercent,
   netDeployableEquity,
 }: OtpForecastSummaryCardProps) {
   const depositAmount = purchasePrice * (depositPercent / 100);
   const actualUpfrontCash = useDepositBond ? actualUpfrontCashPerProperty : depositAmount;
   const forecastCompletionValue = purchasePrice * Math.pow(1 + annualGrowthPercent / 100, yearsToCompletion);
   const forecastEquityGainPerProperty = forecastCompletionValue - purchasePrice;
-  const projectedEquityPerProperty = actualUpfrontCash + forecastEquityGainPerProperty;
+  const retainedEquityPerProperty = forecastCompletionValue * (retainedEquityPercent / 100);
+  const usableOtpEquityPerProperty = forecastCompletionValue - retainedEquityPerProperty;
   const totalUpfrontCashNeeded = actualUpfrontCash * propertyCount;
   const totalProjectedGain = forecastEquityGainPerProperty * propertyCount;
-  const totalProjectedOtpEquity = projectedEquityPerProperty * propertyCount;
+  const totalUsableOtpEquity = usableOtpEquityPerProperty * propertyCount;
   const fundingSurplusShortfall = netDeployableEquity === null ? null : netDeployableEquity - totalUpfrontCashNeeded;
   const hasPositiveGain = totalProjectedGain > 0;
   const hasFundingCover = fundingSurplusShortfall !== null && fundingSurplusShortfall >= 0;
@@ -41,7 +44,7 @@ export function OtpForecastSummaryCard({
         <Stack spacing={1}>
           <Typography variant="h5">OTP forecast summary</Typography>
           <Typography color="text.secondary">
-            Estimate the completion value, expected gain, projected OTP equity position, and whether current deployable equity can fund the upfront structure.
+            Estimate the completion value, expected gain, usable OTP equity at completion, and whether current deployable equity can fund the upfront structure.
           </Typography>
         </Stack>
 
@@ -76,10 +79,10 @@ export function OtpForecastSummaryCard({
           <Grid size={{ xs: 12, sm: 6, xl: 4 }}>
             <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 4, height: '100%' }}>
               <Stack spacing={1}>
-                <Typography color="text.secondary">Projected equity per property</Typography>
-                <Typography variant="h5">{formatCurrency(projectedEquityPerProperty)}</Typography>
+                <Typography color="text.secondary">Usable OTP equity per property</Typography>
+                <Typography variant="h5">{formatCurrency(usableOtpEquityPerProperty)}</Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Upfront cash committed + forecast gain
+                  Completion value - retained equity ({retainedEquityPercent.toFixed(1)}%)
                 </Typography>
               </Stack>
             </Paper>
@@ -87,11 +90,11 @@ export function OtpForecastSummaryCard({
           <Grid size={{ xs: 12, sm: 6, xl: 4 }}>
             <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 4, height: '100%' }}>
               <Stack spacing={1}>
-                <Typography color="text.secondary">Total projected OTP equity</Typography>
+                <Typography color="text.secondary">Total usable OTP equity</Typography>
                 <Stack direction="row" spacing={1} alignItems="center">
                   <TrendingUpRoundedIcon color={hasPositiveGain ? 'success' : 'disabled'} />
                   <Typography variant="h5" sx={{ color: hasPositiveGain ? 'success.main' : 'text.primary' }}>
-                    {formatCurrency(totalProjectedOtpEquity)}
+                    {formatCurrency(totalUsableOtpEquity)}
                   </Typography>
                 </Stack>
                 <Typography variant="body2" color="text.secondary">
