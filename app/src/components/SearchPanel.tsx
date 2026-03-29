@@ -270,9 +270,15 @@ export function SearchPanel({ options, selected, onChange, onManualSubmit, mapOp
               <Autocomplete
                 filterOptions={(items) => items}
                 options={autocompleteOptions}
-                value={selected}
-                inputValue={searchText}
-                onInputChange={(_, value) => setSearchText(value)}
+                value={manualMode ? null : selected}
+                inputValue={manualMode ? manualAddress : searchText}
+                onInputChange={(_, value) => {
+                  if (manualMode) {
+                    setManualAddress(value);
+                  } else {
+                    setSearchText(value);
+                  }
+                }}
                 onChange={(_, value) => onChange(value)}
                 getOptionLabel={(option) => option.address}
                 isOptionEqualToValue={(option, value) => option.id === value.id}
