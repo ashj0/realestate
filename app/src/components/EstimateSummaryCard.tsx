@@ -71,7 +71,19 @@ function HeroMetric({
   );
 }
 
-function DetailRow({ label, value, helper, strong = false }: { label: string; value: string; helper?: string; strong?: boolean }) {
+function DetailRow({
+  label,
+  value,
+  helper,
+  strong = false,
+  positive = false,
+}: {
+  label: string;
+  value: string;
+  helper?: string;
+  strong?: boolean;
+  positive?: boolean;
+}) {
   return (
     <Box sx={{ py: 1.5, borderBottom: '1px solid', borderColor: 'divider', '&:last-child': { borderBottom: 'none', pb: 0 }, minWidth: 0 }}>
       <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" gap={1} sx={{ minWidth: 0 }}>
@@ -80,7 +92,11 @@ function DetailRow({ label, value, helper, strong = false }: { label: string; va
         </Typography>
         <Typography
           variant="body2"
-          sx={{ fontWeight: strong ? 700 : 500, color: strong ? 'text.primary' : 'text.secondary', overflowWrap: 'anywhere' }}
+          sx={{
+            fontWeight: strong ? 700 : 500,
+            color: positive ? 'success.main' : strong ? 'text.primary' : 'text.secondary',
+            overflowWrap: 'anywhere',
+          }}
         >
           {value}
         </Typography>
@@ -245,6 +261,7 @@ export function EstimateSummaryCard({ result, loanBalance, sellingCostPercent, e
                       label="Usable equity if held"
                       value={usableEquityIfHeld === null ? 'Unavailable' : formatCurrency(usableEquityIfHeld)}
                       strong
+                      positive={usableEquityHeldPositive}
                     />
                   </Box>
                 </Paper>
@@ -266,6 +283,7 @@ export function EstimateSummaryCard({ result, loanBalance, sellingCostPercent, e
                       value={netDeployableEquity === null ? 'Unavailable' : formatCurrency(netDeployableEquity)}
                       helper="Estimated current value minus loan balance and selling costs"
                       strong
+                      positive={netDeployablePositive}
                     />
                   </Box>
                 </Paper>

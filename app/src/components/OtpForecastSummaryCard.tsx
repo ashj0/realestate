@@ -41,7 +41,9 @@ function HeroMetric({
       }}
     >
       <Stack spacing={1} sx={{ minWidth: 0 }}>
-        <Typography color="text.secondary">{label}</Typography>
+        <Typography color="text.secondary" sx={{ fontWeight: 700 }}>
+          {label}
+        </Typography>
         <Typography
           variant="h5"
           sx={{
@@ -62,16 +64,32 @@ function HeroMetric({
   );
 }
 
-function DetailRow({ label, value, helper, strong = false }: { label: string; value: string; helper?: string; strong?: boolean }) {
+function DetailRow({
+  label,
+  value,
+  helper,
+  strong = false,
+  positive = false,
+}: {
+  label: string;
+  value: string;
+  helper?: string;
+  strong?: boolean;
+  positive?: boolean;
+}) {
   return (
     <Box sx={{ py: 1.5, borderBottom: '1px solid', borderColor: 'divider', '&:last-child': { borderBottom: 'none', pb: 0 }, minWidth: 0 }}>
       <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" gap={1} sx={{ minWidth: 0 }}>
-        <Typography variant="body2" color="text.secondary" sx={{ minWidth: 0, overflowWrap: 'anywhere' }}>
+        <Typography variant="body2" color="text.secondary" sx={{ minWidth: 0, overflowWrap: 'anywhere', fontWeight: 700 }}>
           {label}
         </Typography>
         <Typography
           variant="body2"
-          sx={{ fontWeight: strong ? 700 : 500, color: strong ? 'text.primary' : 'text.secondary', overflowWrap: 'anywhere' }}
+          sx={{
+            fontWeight: strong ? 700 : 500,
+            color: positive ? 'success.main' : strong ? 'text.primary' : 'text.secondary',
+            overflowWrap: 'anywhere',
+          }}
         >
           {value}
         </Typography>
@@ -109,6 +127,8 @@ export function OtpForecastSummaryCard({
   const fundingSurplusShortfall = netDeployableEquity === null ? null : netDeployableEquity - totalUpfrontCashNeeded;
   const hasPositiveGain = totalProjectedGain > 0;
   const hasFundingCover = fundingSurplusShortfall !== null && fundingSurplusShortfall >= 0;
+  const totalUsableOtpEquityPositive = totalUsableOtpEquity > 0;
+  const totalUpfrontCashPositive = totalUpfrontCashNeeded > 0;
 
   return (
     <Paper sx={{ p: { xs: 2.5, md: 3.5 }, width: '100%', overflow: 'hidden' }}>
@@ -116,7 +136,9 @@ export function OtpForecastSummaryCard({
         <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', md: 'center' }} gap={2}>
           <Box sx={{ minWidth: 0 }}>
             <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.75, flexWrap: 'wrap' }}>
-              <Typography variant="h5" sx={{ fontWeight: 700 }}>Projected OTP Outcome</Typography>
+              <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                Projected OTP Outcome
+              </Typography>
               <Chip label="At completion" size="small" variant="outlined" />
             </Stack>
             <Typography color="text.secondary" sx={{ overflowWrap: 'anywhere' }}>
@@ -168,7 +190,7 @@ export function OtpForecastSummaryCard({
             <Grid container spacing={3}>
               <Grid size={{ xs: 12, md: 6 }}>
                 <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 3, height: '100%', overflow: 'hidden' }}>
-                  <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+                  <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, fontWeight: 700 }}>
                     Project setup
                   </Typography>
                   <Box>
@@ -184,14 +206,19 @@ export function OtpForecastSummaryCard({
                       value={formatCurrency(actualUpfrontCash)}
                       helper={useDepositBond ? 'Deposit bond cash assumption applied' : 'Matches full deposit amount'}
                     />
-                    <DetailRow label="Total upfront cash needed" value={formatCurrency(totalUpfrontCashNeeded)} strong />
+                    <DetailRow
+                      label="Total upfront cash needed"
+                      value={formatCurrency(totalUpfrontCashNeeded)}
+                      strong
+                      positive={totalUpfrontCashPositive}
+                    />
                   </Box>
                 </Paper>
               </Grid>
 
               <Grid size={{ xs: 12, md: 6 }}>
                 <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 3, height: '100%', overflow: 'hidden' }}>
-                  <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+                  <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, fontWeight: 700 }}>
                     Growth and outcome
                   </Typography>
                   <Box>
@@ -202,14 +229,21 @@ export function OtpForecastSummaryCard({
                       value={formatCurrency(totalProjectedGain)}
                       helper={`Across ${propertyCount} ${propertyCount === 1 ? 'property' : 'properties'}`}
                       strong={hasPositiveGain}
+                      positive={hasPositiveGain}
                     />
-                    <DetailRow label="Total usable OTP equity" value={formatCurrency(totalUsableOtpEquity)} strong />
+                    <DetailRow
+                      label="Total usable OTP equity"
+                      value={formatCurrency(totalUsableOtpEquity)}
+                      strong
+                      positive={totalUsableOtpEquityPositive}
+                    />
                     <DetailRow label="Principal & interest cost" value={formatCurrency(principalInterestCost)} />
                     <DetailRow
                       label="Funding surplus / shortfall"
                       value={fundingSurplusShortfall === null ? 'Unavailable' : formatCurrency(fundingSurplusShortfall)}
                       helper="Net deployable equity minus total upfront cash needed"
                       strong={hasFundingCover}
+                      positive={hasFundingCover}
                     />
                   </Box>
                 </Paper>
