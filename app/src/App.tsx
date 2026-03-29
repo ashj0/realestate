@@ -146,7 +146,7 @@ export default function App() {
                   selectedComparables={result.selectedComparables}
                 />
               </Stack>
-              <Box sx={{ minWidth: 0, alignSelf: 'start' }}>
+              <Box sx={{ minWidth: 0, alignSelf: { xs: 'start', lg: 'stretch' }, display: 'flex' }}>
                 <SourceBreakdown siteEstimates={result.siteEstimates} />
               </Box>
             </Box>
