@@ -1,6 +1,6 @@
 import TrendingUpRoundedIcon from '@mui/icons-material/TrendingUpRounded';
 import VerifiedRoundedIcon from '@mui/icons-material/VerifiedRounded';
-import { Alert, Chip, Grid, Paper, Stack, Typography } from '@mui/material';
+import { Alert, Box, Chip, Grid, Paper, Stack, Typography } from '@mui/material';
 import type { EstimateApiResponse } from '../types';
 import { formatCurrency, formatPercent } from '../utils';
 
@@ -22,6 +22,7 @@ export function EstimateSummaryCard({ result }: EstimateSummaryCardProps) {
   const lastYearValuation = result.input.lastYearValuation;
   const currentValuation = result.result.currentValuation;
   const increaseAmount = currentValuation === null ? null : currentValuation - lastYearValuation;
+  const isUp = increaseAmount !== null && increaseAmount > 0;
 
   return (
     <Paper sx={{ p: 3.5 }}>
@@ -31,7 +32,7 @@ export function EstimateSummaryCard({ result }: EstimateSummaryCardProps) {
             <Typography variant="overline" color="text.secondary">
               Estimated current value
             </Typography>
-            <Typography variant="h3">
+            <Typography variant="h3" sx={{ color: isUp ? 'success.main' : 'text.primary' }}>
               {currentValuation === null ? 'Unavailable' : formatCurrency(currentValuation)}
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75 }}>
@@ -59,8 +60,8 @@ export function EstimateSummaryCard({ result }: EstimateSummaryCardProps) {
               <Stack spacing={1}>
                 <Typography color="text.secondary">Property increase</Typography>
                 <Stack direction="row" spacing={1} alignItems="center">
-                  <TrendingUpRoundedIcon color={increaseAmount !== null && increaseAmount >= 0 ? 'success' : 'disabled'} />
-                  <Typography variant="h5">
+                  <TrendingUpRoundedIcon color={isUp ? 'success' : 'disabled'} />
+                  <Typography variant="h5" sx={{ color: isUp ? 'success.main' : 'text.primary' }}>
                     {increaseAmount === null ? 'Unavailable' : formatCurrency(increaseAmount)}
                   </Typography>
                 </Stack>
@@ -82,6 +83,21 @@ export function EstimateSummaryCard({ result }: EstimateSummaryCardProps) {
             </Paper>
           </Grid>
         </Grid>
+
+        {result.assumptions.length ? (
+          <Box>
+            <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+              Methodology notes
+            </Typography>
+            <Stack spacing={0.75}>
+              {result.assumptions.slice(0, 3).map((assumption) => (
+                <Typography key={assumption} variant="body2" color="text.secondary">
+                  • {assumption}
+                </Typography>
+              ))}
+            </Stack>
+          </Box>
+        ) : null}
 
         {result.errors.length ? <Alert severity="warning">{result.errors.join(' · ')}</Alert> : null}
       </Stack>

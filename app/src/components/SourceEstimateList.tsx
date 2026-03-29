@@ -3,6 +3,7 @@ import {
   Box,
   Button,
   Chip,
+  Grid,
   Link,
   Paper,
   Stack,
@@ -52,7 +53,7 @@ function renderComparableRows(rows: ComparableRecord[]) {
   if (!rows.length) {
     return (
       <TableRow>
-        <TableCell colSpan={4} sx={{ color: 'text.secondary' }}>
+        <TableCell colSpan={5} sx={{ color: 'text.secondary' }}>
           No comparable properties returned.
         </TableCell>
       </TableRow>
@@ -61,14 +62,43 @@ function renderComparableRows(rows: ComparableRecord[]) {
 
   return rows.map((row, index) => (
     <TableRow key={`${row.address}-${row.saleDate ?? index}`} hover>
-      <TableCell>{row.address}</TableCell>
+      <TableCell>
+        <Stack spacing={0.5}>
+          <Typography variant="body2" fontWeight={600}>
+            {row.address}
+          </Typography>
+          {row.salePrice != null ? (
+            <Typography variant="caption" color="text.secondary">
+              {formatCurrency(row.salePrice)}
+            </Typography>
+          ) : null}
+        </Stack>
+      </TableCell>
       <TableCell>{row.source ?? 'Unknown'}</TableCell>
       <TableCell>{row.saleDate ?? '—'}</TableCell>
       <TableCell>
         {row.sourceUrl ? (
           <Link href={row.sourceUrl} target="_blank" rel="noreferrer" underline="hover">
-            Open listing
+            Property link
           </Link>
+        ) : (
+          '—'
+        )}
+      </TableCell>
+      <TableCell>
+        {row.sourceUrl ? (
+          <Button
+            size="small"
+            variant="text"
+            endIcon={<LaunchRoundedIcon />}
+            component="a"
+            href={row.sourceUrl}
+            target="_blank"
+            rel="noreferrer"
+            sx={{ minWidth: 0, p: 0 }}
+          >
+            Open
+          </Button>
         ) : (
           '—'
         )}
@@ -100,9 +130,7 @@ export function SourceEstimateList({ siteEstimates, selectedComparables }: Sourc
                 <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" spacing={2}>
                   <Stack spacing={1}>
                     <Typography fontWeight={700}>{site.label}</Typography>
-                    <Typography color="text.secondary">
-                      Growth: {growthLabel(site)}
-                    </Typography>
+                    <Typography color="text.secondary">Growth: {growthLabel(site)}</Typography>
                     <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
                       <Chip label={site.propertyTypeMatched ? 'Property type matched' : 'Property type mismatch'} size="small" />
                       {site.medianPricePeriod ? <Chip label={site.medianPricePeriod} size="small" variant="outlined" /> : null}
@@ -135,84 +163,91 @@ export function SourceEstimateList({ siteEstimates, selectedComparables }: Sourc
         </Stack>
       </Paper>
 
-      <Paper sx={{ p: 3.5 }}>
-        <Stack spacing={2}>
-          <div>
-            <Typography variant="h5" gutterBottom>
-              Sold history
-            </Typography>
-            <Typography color="text.secondary">
-              Historical sale points returned by the provider responses.
-            </Typography>
-          </div>
+      <Grid container spacing={3}>
+        <Grid size={{ xs: 12, lg: 6 }}>
+          <Paper sx={{ p: 3.5, height: '100%' }}>
+            <Stack spacing={2}>
+              <div>
+                <Typography variant="h5" gutterBottom>
+                  Comparables
+                </Typography>
+                <Typography color="text.secondary">
+                  Comparable properties selected from the source results.
+                </Typography>
+              </div>
 
-          <TableContainer sx={{ maxHeight: 320, border: '1px solid rgba(29,53,87,0.08)', borderRadius: 3 }}>
-            <Table stickyHeader size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>Date</TableCell>
-                  <TableCell>Price</TableCell>
-                  <TableCell>Source</TableCell>
-                  <TableCell>Link</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {soldHistoryRows.length ? (
-                  soldHistoryRows.map((row, index) => (
-                    <TableRow key={`${row.source}-${row.date ?? index}`} hover>
-                      <TableCell>{row.date ?? '—'}</TableCell>
-                      <TableCell>{row.price === null ? '—' : formatCurrency(row.price)}</TableCell>
-                      <TableCell>{row.source ?? 'Unknown'}</TableCell>
-                      <TableCell>
-                        {row.sourceUrl ? (
-                          <Link href={row.sourceUrl} target="_blank" rel="noreferrer" underline="hover">
-                            Open
-                          </Link>
-                        ) : (
-                          '—'
-                        )}
-                      </TableCell>
+              <TableContainer sx={{ maxHeight: 360, border: '1px solid rgba(29,53,87,0.08)', borderRadius: 3 }}>
+                <Table stickyHeader size="small">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Name</TableCell>
+                      <TableCell>Site</TableCell>
+                      <TableCell>Sale date</TableCell>
+                      <TableCell>Link</TableCell>
+                      <TableCell></TableCell>
                     </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={4} sx={{ color: 'text.secondary' }}>
-                      No sold history returned.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </Stack>
-      </Paper>
+                  </TableHead>
+                  <TableBody>{renderComparableRows(selectedComparables)}</TableBody>
+                </Table>
+              </TableContainer>
+            </Stack>
+          </Paper>
+        </Grid>
 
-      <Paper sx={{ p: 3.5 }}>
-        <Stack spacing={2}>
-          <div>
-            <Typography variant="h5" gutterBottom>
-              Comparables
-            </Typography>
-            <Typography color="text.secondary">
-              Comparable properties selected from the source results.
-            </Typography>
-          </div>
+        <Grid size={{ xs: 12, lg: 6 }}>
+          <Paper sx={{ p: 3.5, height: '100%' }}>
+            <Stack spacing={2}>
+              <div>
+                <Typography variant="h5" gutterBottom>
+                  Sold history
+                </Typography>
+                <Typography color="text.secondary">
+                  Historical sale points returned by the provider responses.
+                </Typography>
+              </div>
 
-          <TableContainer sx={{ maxHeight: 320, border: '1px solid rgba(29,53,87,0.08)', borderRadius: 3 }}>
-            <Table stickyHeader size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>Name</TableCell>
-                  <TableCell>Site</TableCell>
-                  <TableCell>Sale date</TableCell>
-                  <TableCell>Link</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>{renderComparableRows(selectedComparables)}</TableBody>
-            </Table>
-          </TableContainer>
-        </Stack>
-      </Paper>
+              <TableContainer sx={{ maxHeight: 360, border: '1px solid rgba(29,53,87,0.08)', borderRadius: 3 }}>
+                <Table stickyHeader size="small">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Date</TableCell>
+                      <TableCell>Price</TableCell>
+                      <TableCell>Source</TableCell>
+                      <TableCell>Property</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {soldHistoryRows.length ? (
+                      soldHistoryRows.map((row, index) => (
+                        <TableRow key={`${row.source}-${row.date ?? index}`} hover>
+                          <TableCell>{row.date ?? '—'}</TableCell>
+                          <TableCell>{row.price === null ? '—' : formatCurrency(row.price)}</TableCell>
+                          <TableCell>{row.source ?? 'Unknown'}</TableCell>
+                          <TableCell>
+                            {row.sourceUrl ? (
+                              <Link href={row.sourceUrl} target="_blank" rel="noreferrer" underline="hover">
+                                View property
+                              </Link>
+                            ) : (
+                              '—'
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={4} sx={{ color: 'text.secondary' }}>
+                          No sold history returned.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Stack>
+          </Paper>
+        </Grid>
+      </Grid>
     </Stack>
   );
 }
