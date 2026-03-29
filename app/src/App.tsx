@@ -12,6 +12,7 @@ import { SearchPanel } from './components/SearchPanel';
 import { SelectedSuburbCard } from './components/SelectedSuburbCard';
 import { ValuationForm } from './components/ValuationForm';
 import { EstimateSummaryCard } from './components/EstimateSummaryCard';
+import { SourceBreakdown } from './components/SourceBreakdown';
 import { SourceEstimateList } from './components/SourceEstimateList';
 import { propertyOptions } from './data/mockData';
 import type { EstimateApiResponse, PropertyOption } from './types';
@@ -121,18 +122,21 @@ export default function App() {
           {error ? <Alert severity="error">{error}</Alert> : null}
 
           {result ? (
-            <Grid container spacing={2}>
-              <Grid size={{ xs: 12, lg: 4 }}>
-                <EstimateSummaryCard result={result} />
+            <Stack spacing={2}>
+              <Grid container spacing={2}>
+                <Grid size={{ xs: 12, lg: 4 }}>
+                  <EstimateSummaryCard result={result} />
+                </Grid>
+                <Grid size={{ xs: 12, lg: 8 }}>
+                  <SourceBreakdown siteEstimates={result.siteEstimates} />
+                </Grid>
               </Grid>
-              <Grid size={{ xs: 12, lg: 8 }}>
-                <SourceEstimateList
-                  siteEstimates={result.siteEstimates}
-                  selectedComparables={result.selectedComparables}
-                  subjectAddress={selectedProperty?.address ?? result.input.address}
-                />
-              </Grid>
-            </Grid>
+
+              <SourceEstimateList
+                siteEstimates={result.siteEstimates}
+                selectedComparables={result.selectedComparables}
+              />
+            </Stack>
           ) : null}
         </Stack>
       </Container>
