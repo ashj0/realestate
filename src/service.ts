@@ -3,15 +3,20 @@ import { saveDebugHtml } from './debug.js';
 import { extractDomain, extractProperty, extractRealestate } from './extractors.js';
 import { buildSuburbUrls } from './location.js';
 import { fetchScrapflyContent } from './scrapfly.js';
-import { resolveKnownUrls } from './url-resolver.js';
 import { average, uniqueBy } from './utils.js';
 import { validateOutput } from './validation.js';
 
-function emptySiteEstimates(input: PropertyGrowthInput, urls: { realestate: string; domain: string; property: string }) {
+const DEFAULT_URLS = {
+  realestate: 'https://www.realestate.com.au/property/unit-705-60-riversdale-rd-rivervale-wa-6103/',
+  domain: 'https://www.domain.com.au/property-profile/705-60-riversdale-road-rivervale-wa-6103',
+  property: 'https://www.property.com.au/wa/rivervale-6103/riversdale-rd/705-60-pid-20009700/'
+};
+
+function emptySiteEstimates(input: PropertyGrowthInput) {
   return {
-    realestate_com_au: extractRealestate('', urls.realestate, input.address),
-    domain_com_au: extractDomain('', urls.domain, input.address),
-    property_com_au: extractProperty('', urls.property, input.address)
+    realestate_com_au: extractRealestate('', input.knownUrls?.realestate ?? DEFAULT_URLS.realestate, input.address),
+    domain_com_au: extractDomain('', input.knownUrls?.domain ?? DEFAULT_URLS.domain, input.address),
+    property_com_au: extractProperty('', input.knownUrls?.property ?? DEFAULT_URLS.property, input.address)
   };
 }
 
@@ -58,75 +63,23 @@ function determineConfidence(siteEstimates: PropertyGrowthResult['siteEstimates'
   return 'low';
 }
 
-function appendResolutionNotes(
-  siteEstimates: PropertyGrowthResult['siteEstimates'],
-  resolvedKnownUrls: Awaited<ReturnType<typeof resolveKnownUrls>>,
-  suburbUrls: { realestate: string; domain: string; property: string }
-) {
-  const mappings = [
-    {
-      estimate: siteEstimates.realestate_com_au,
-      resolved: resolvedKnownUrls.realestate,
-      fallbackUrl: suburbUrls.realestate,
-      label: 'realestate.com.au'
-    },
-    {
-      estimate: siteEstimates.domain_com_au,
-      resolved: resolvedKnownUrls.domain,
-      fallbackUrl: suburbUrls.domain,
-      label: 'domain.com.au'
-    },
-    {
-      estimate: siteEstimates.property_com_au,
-      resolved: resolvedKnownUrls.property,
-      fallbackUrl: suburbUrls.property,
-      label: 'property.com.au'
-    }
-  ] as const;
-
-  for (const mapping of mappings) {
-    if (mapping.resolved.resolution === 'provided') {
-      mapping.estimate.notes.unshift(`URL resolution: using caller-provided property URL`);
-    } else if (mapping.resolved.resolution === 'resolved-property') {
-      mapping.estimate.notes.unshift(`URL resolution: matched property URL`);
-      if (mapping.resolved.matchedCandidate) {
-        mapping.estimate.notes.push(`Matched candidate: ${mapping.resolved.matchedCandidate}`);
-      }
-      if (mapping.resolved.searchUrl) {
-        mapping.estimate.notes.push(`Search page: ${mapping.resolved.searchUrl}`);
-      }
-    } else {
-      mapping.estimate.notes.unshift(`URL resolution: fallback to suburb/site page`);
-      mapping.estimate.notes.push(`Fallback URL: ${mapping.fallbackUrl}`);
-      if (mapping.resolved.reason) {
-        mapping.estimate.notes.push(mapping.resolved.reason);
-      }
-      if (mapping.resolved.searchUrl) {
-        mapping.estimate.notes.push(`Search page: ${mapping.resolved.searchUrl}`);
-      }
-    }
-  }
-}
-
 export async function estimatePropertyGrowth(input: PropertyGrowthInput, _proxyUrl: string): Promise<PropertyGrowthResult> {
   const errors: string[] = [];
   const assumptions: string[] = [];
   const suburbUrls = buildSuburbUrls(input);
+  const urls = {
+    realestate: input.knownUrls?.realestate ?? suburbUrls?.realestate ?? DEFAULT_URLS.realestate,
+    domain: input.knownUrls?.domain ?? suburbUrls?.domain ?? DEFAULT_URLS.domain,
+    property: input.knownUrls?.property ?? suburbUrls?.property ?? DEFAULT_URLS.property
+  };
+
+  const siteEstimates = emptySiteEstimates(input);
 
   const apiKey = process.env.SCRAPFLY_API_KEY;
 
   if (!apiKey) {
     throw new Error('SCRAPFLY_API_KEY environment variable is required');
   }
-
-  const resolvedKnownUrls = await resolveKnownUrls(input, apiKey);
-  const urls = {
-    realestate: resolvedKnownUrls.realestate.url ?? suburbUrls.realestate,
-    domain: resolvedKnownUrls.domain.url ?? suburbUrls.domain,
-    property: resolvedKnownUrls.property.url ?? suburbUrls.property
-  };
-
-  const siteEstimates = emptySiteEstimates(input, urls);
 
   await Promise.all([
     fetchScrapflyContent(urls.realestate, apiKey)
@@ -148,8 +101,6 @@ export async function estimatePropertyGrowth(input: PropertyGrowthInput, _proxyU
       })
       .catch((error: Error) => errors.push(`property.com.au: ${error.message}`))
   ]);
-
-  appendResolutionNotes(siteEstimates, resolvedKnownUrls, suburbUrls);
 
   const { values, sitesUsed } = collectGrowths(siteEstimates);
   const growthPercent = average(values);
