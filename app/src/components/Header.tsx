@@ -4,17 +4,17 @@ export function Header() {
   return (
     <Stack spacing={2}>
       <Chip
-        label="Property valuation workspace"
+        label="inSynergy property strategy workspace"
         color="secondary"
         sx={{ alignSelf: 'flex-start', fontWeight: 700 }}
       />
       <Box>
         <Typography variant="h1" gutterBottom>
-          Insynergy Property Analysis
+          inSynergy Hold v&apos;s Sell Property Analysis
         </Typography>
-        <Typography variant="h6" color="text.secondary" sx={{ maxWidth: 760, lineHeight: 1.5 }}>
-          Search a property, enter last year&apos;s valuation, and review the estimated current value,
-          growth, sold history, and supporting comparables in one place.
+        <Typography variant="h6" color="text.secondary" sx={{ maxWidth: 860, lineHeight: 1.5 }}>
+          Compare hold-versus-sell scenarios, review current property position, and assess OTP strategy outcomes
+          in a clearer client-facing inSynergy workflow.
         </Typography>
       </Box>
     </Stack>
