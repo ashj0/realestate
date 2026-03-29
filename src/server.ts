@@ -24,7 +24,12 @@ async function handlePropertyAutocomplete(req: express.Request, res: express.Res
     const results = await searchPropertyAutocomplete(query);
     res.json(results);
   } catch (error) {
-    res.status(500).json({ errors: [error instanceof Error ? error.message : 'Unknown error'] });
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    if (message.includes('429')) {
+      res.json([]);
+      return;
+    }
+    res.status(500).json({ errors: [message] });
   }
 }
 

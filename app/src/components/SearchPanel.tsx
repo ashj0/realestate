@@ -166,6 +166,7 @@ export function SearchPanel({ options, selected, onChange, onManualSubmit, mapOp
   const [manualPropertyType, setManualPropertyType] = useState<'house' | 'unit'>('unit');
   const [manualSuccessMessage, setManualSuccessMessage] = useState('');
   const [manualSelectionActive, setManualSelectionActive] = useState(false);
+  const [searchError, setSearchError] = useState('');
 
   useEffect(() => {
     setAutocompleteOptions((current) => {
@@ -193,14 +194,25 @@ export function SearchPanel({ options, selected, onChange, onManualSubmit, mapOp
 
     const timeoutId = window.setTimeout(async () => {
       setLoading(true);
+      setSearchError('');
 
       try {
         const response = await fetch(`${apiBaseUrl}/property-autocomplete?q=${encodeURIComponent(query)}`);
-        const data = (await response.json()) as PropertyAutocompleteOption[];
+        const raw = await response.json();
+        const data = Array.isArray(raw) ? (raw as PropertyAutocompleteOption[]) : [];
+
+        if (!response.ok) {
+          const message = raw && typeof raw === 'object' && 'errors' in raw && Array.isArray((raw as { errors?: unknown }).errors)
+            ? ((raw as { errors: string[] }).errors.join(' · ') || 'Autocomplete failed')
+            : 'Autocomplete failed';
+          setSearchError(message);
+        }
+
         const next = selected ? [selected, ...data.filter((option) => option.id !== selected.id)] : data;
         setAutocompleteOptions(next);
       } catch {
         setAutocompleteOptions(selected ? [selected] : []);
+        setSearchError('Autocomplete failed');
       } finally {
         setLoading(false);
       }
@@ -297,6 +309,7 @@ export function SearchPanel({ options, selected, onChange, onManualSubmit, mapOp
           <Collapse in={expanded || !selected}>
             <Stack spacing={2.5}>
               {manualSuccessMessage ? <Alert severity="success">{manualSuccessMessage}</Alert> : null}
+              {searchError ? <Alert severity="warning">{searchError}</Alert> : null}
 
               <Autocomplete
                 filterOptions={(items) => items}
