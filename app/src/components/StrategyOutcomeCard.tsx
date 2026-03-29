@@ -128,7 +128,7 @@ export function StrategyOutcomeCard(props: StrategyOutcomeCardProps) {
     <Paper sx={{ p: 3.5, width: '100%' }}>
       <Stack spacing={2.5}>
         <Stack spacing={1}>
-          <Typography variant="h5">Strategy outcome</Typography>
+          <Typography variant="h5" sx={{ fontWeight: 700 }}>Strategy outcome</Typography>
           <Typography color="text.secondary">
             Compare the 3-year outcome of keeping the current property versus selling and redeploying into {props.propertyCount} off-the-plan properties.
           </Typography>

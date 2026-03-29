@@ -116,7 +116,7 @@ export function OtpForecastSummaryCard({
         <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', md: 'center' }} gap={2}>
           <Box sx={{ minWidth: 0 }}>
             <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.75, flexWrap: 'wrap' }}>
-              <Typography variant="h5">Projected OTP Outcome</Typography>
+              <Typography variant="h5" sx={{ fontWeight: 700 }}>Projected OTP Outcome</Typography>
               <Chip label="At completion" size="small" variant="outlined" />
             </Stack>
             <Typography color="text.secondary" sx={{ overflowWrap: 'anywhere' }}>

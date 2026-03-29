@@ -150,9 +150,7 @@ export function SearchPanel({ options, selected, onChange, mapOpen, onMapOpen, o
       const next = [selected, ...current.filter((option) => option.id !== selected.id)];
       return next.slice(0, 8);
     });
-    if (selected) {
-      setExpanded(false);
-    }
+    setExpanded(!selected);
   }, [selected]);
 
   useEffect(() => {
@@ -196,7 +194,7 @@ export function SearchPanel({ options, selected, onChange, mapOpen, onMapOpen, o
         <Stack spacing={selected && !expanded ? 1 : selected ? 1.5 : 3}>
           <Stack direction="row" justifyContent="space-between" alignItems="center" gap={2}>
             <Box>
-              <Typography variant={selected ? 'h6' : 'h5'} gutterBottom={!selected}>
+              <Typography variant={selected ? 'h6' : 'h5'} gutterBottom={!selected} sx={{ fontWeight: 700 }}>
                 Search for a property
               </Typography>
               <Typography color="text.secondary" variant="body2">

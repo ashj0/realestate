@@ -48,7 +48,9 @@ function HeroMetric({
       }}
     >
       <Stack spacing={1} sx={{ minWidth: 0 }}>
-        <Typography color="text.secondary">{label}</Typography>
+        <Typography color="text.secondary" sx={{ fontWeight: 700 }}>
+          {label}
+        </Typography>
         <Typography
           variant="h5"
           sx={{
@@ -73,7 +75,7 @@ function DetailRow({ label, value, helper, strong = false }: { label: string; va
   return (
     <Box sx={{ py: 1.5, borderBottom: '1px solid', borderColor: 'divider', '&:last-child': { borderBottom: 'none', pb: 0 }, minWidth: 0 }}>
       <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" gap={1} sx={{ minWidth: 0 }}>
-        <Typography variant="body2" color="text.secondary" sx={{ minWidth: 0, overflowWrap: 'anywhere' }}>
+        <Typography variant="body2" color="text.secondary" sx={{ minWidth: 0, overflowWrap: 'anywhere', fontWeight: 700 }}>
           {label}
         </Typography>
         <Typography
@@ -104,6 +106,8 @@ export function EstimateSummaryCard({ result, loanBalance, sellingCostPercent, e
   const netDeployableEquity =
     currentValuation === null || estimatedSellingCosts === null ? null : currentValuation - loanBalance - estimatedSellingCosts;
   const isUp = increaseAmount !== null && increaseAmount > 0;
+  const usableEquityHeldPositive = usableEquityIfHeld !== null && usableEquityIfHeld > 0;
+  const netDeployablePositive = netDeployableEquity !== null && netDeployableEquity > 0;
 
   return (
     <Paper sx={{ p: { xs: 2.5, md: 3.5 }, height: '100%', width: '100%', overflow: 'hidden' }}>
@@ -119,7 +123,9 @@ export function EstimateSummaryCard({ result, loanBalance, sellingCostPercent, e
                 sx={{ minWidth: 0 }}
               >
                 <Stack direction="row" spacing={1} alignItems="center" sx={{ minWidth: 0, flexWrap: 'wrap' }}>
-                  <Typography variant="h5">Current Property Position</Typography>
+                  <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                    Current Property Position
+                  </Typography>
                   <Chip label="Now" size="small" variant="outlined" />
                 </Stack>
 
@@ -161,13 +167,13 @@ export function EstimateSummaryCard({ result, loanBalance, sellingCostPercent, e
           }}
         >
           <Stack spacing={1.25} sx={{ minWidth: 0 }}>
-            <Typography variant="overline" color="success.main">
-              Most important number
-            </Typography>
             <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
               Net deployable equity
             </Typography>
-            <Typography variant="h3" sx={{ color: 'success.main', lineHeight: 1.05, overflowWrap: 'anywhere' }}>
+            <Typography
+              variant="h3"
+              sx={{ color: netDeployablePositive ? 'success.main' : 'text.primary', lineHeight: 1.05, overflowWrap: 'anywhere' }}
+            >
               {netDeployableEquity === null ? 'Unavailable' : formatCurrency(netDeployableEquity)}
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ overflowWrap: 'anywhere' }}>
@@ -192,7 +198,7 @@ export function EstimateSummaryCard({ result, loanBalance, sellingCostPercent, e
               label="Usable equity if held"
               value={usableEquityIfHeld === null ? 'Unavailable' : formatCurrency(usableEquityIfHeld)}
               helper={`After retaining ${retainedEquityPercent.toFixed(1)}% equity in the property`}
-              positive
+              positive={usableEquityHeldPositive}
             />
           </Grid>
         </Grid>
@@ -211,7 +217,7 @@ export function EstimateSummaryCard({ result, loanBalance, sellingCostPercent, e
             <Grid container spacing={3}>
               <Grid size={{ xs: 12, md: 6 }}>
                 <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 3, height: '100%', overflow: 'hidden' }}>
-                  <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+                  <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 700 }} color="text.secondary">
                     Hold position
                   </Typography>
                   <Box>
@@ -246,7 +252,7 @@ export function EstimateSummaryCard({ result, loanBalance, sellingCostPercent, e
 
               <Grid size={{ xs: 12, md: 6 }}>
                 <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 3, height: '100%', overflow: 'hidden' }}>
-                  <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+                  <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 700 }} color="text.secondary">
                     Sell and redeploy position
                   </Typography>
                   <Box>
@@ -270,7 +276,7 @@ export function EstimateSummaryCard({ result, loanBalance, sellingCostPercent, e
 
         {result.assumptions.length ? (
           <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 4, overflow: 'hidden' }}>
-            <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+            <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 700 }} color="text.secondary">
               Methodology notes
             </Typography>
             <Stack spacing={0.5} sx={{ minWidth: 0 }}>

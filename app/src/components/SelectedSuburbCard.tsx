@@ -13,7 +13,7 @@ export function SelectedSuburbCard({ property }: SelectedSuburbCardProps) {
       <Stack spacing={2}>
         <Stack direction="row" spacing={1} alignItems="center">
           <LocationOnRoundedIcon color="primary" />
-          <Typography variant="h6">Selected property</Typography>
+          <Typography variant="h6" sx={{ fontWeight: 700 }}>Selected property</Typography>
         </Stack>
 
         {property ? (

@@ -34,7 +34,7 @@ export function ValuationForm({
   return (
     <Paper sx={{ p: 3, height: '100%', display: 'flex', width: '100%', minWidth: 0 }}>
       <Stack spacing={2.5} sx={{ width: '100%', justifyContent: 'space-between' }}>
-        <Typography variant="h6">Enter last year&apos;s valuation</Typography>
+        <Typography variant="h6" sx={{ fontWeight: 700 }}>Enter last year&apos;s valuation</Typography>
         <TextField
           label="Last year's valuation"
           value={formatNumberInput(valuation)}
