@@ -197,14 +197,16 @@ export default function App() {
                 options={propertyOptions}
                 selected={selectedProperty}
                 onChange={setSelectedProperty}
-                onManualSubmit={(value) =>
+                onManualSubmit={(value) => {
                   setSelectedProperty({
                     ...value,
                     lat: -31.9523,
                     lng: 115.8613,
                     isManual: true,
-                  })
-                }
+                  });
+                  setResult(null);
+                  setError(null);
+                }}
                 mapOpen={showMap}
                 onMapOpen={() => setShowMap(true)}
                 onMapClose={() => setShowMap(false)}

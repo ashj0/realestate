@@ -239,6 +239,10 @@ export function SearchPanel({ options, selected, onChange, onManualSubmit, mapOp
       postcode,
       propertyType: manualPropertyType,
     });
+
+    setSearchText(`${address}, ${suburb} ${manualState} ${postcode}`);
+    setManualMode(false);
+    setExpanded(false);
   }
 
   return (
