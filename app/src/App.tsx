@@ -124,10 +124,10 @@ export default function App() {
           {result ? (
             <Stack spacing={2}>
               <Grid container spacing={2} alignItems="stretch">
-                <Grid size={{ xs: 12, lg: 4 }} sx={{ display: 'flex' }}>
+                <Grid size={{ xs: 12, lg: 8 }} sx={{ display: 'flex' }}>
                   <EstimateSummaryCard result={result} />
                 </Grid>
-                <Grid size={{ xs: 12, lg: 8 }} sx={{ display: 'flex' }}>
+                <Grid size={{ xs: 12, lg: 4 }} sx={{ display: 'flex' }}>
                   <SourceBreakdown siteEstimates={result.siteEstimates} />
                 </Grid>
               </Grid>
