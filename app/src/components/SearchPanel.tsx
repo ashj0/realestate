@@ -37,6 +37,15 @@ interface SearchPanelProps {
 
 const australianStates = ['NSW', 'QLD', 'VIC', 'WA', 'SA', 'TAS', 'ACT', 'NT'] as const;
 
+const suburbPostcodeHints: Record<string, { state: string; postcode: string }> = {
+  rivervale: { state: 'WA', postcode: '6103' },
+  bondi: { state: 'NSW', postcode: '2026' },
+  'new farm': { state: 'QLD', postcode: '4005' },
+  richmond: { state: 'VIC', postcode: '3121' },
+  subiaco: { state: 'WA', postcode: '6008' },
+  unley: { state: 'SA', postcode: '5061' },
+};
+
 function PropertyMapDialog({
   open,
   options,
@@ -200,6 +209,11 @@ export function SearchPanel({ options, selected, onChange, onManualSubmit, mapOp
   }, [options, autocompleteOptions]);
 
   const showManualFallback = !manualMode && searchText.trim().length >= 3 && !loading && autocompleteOptions.length === 0;
+  const suburbHint = suburbPostcodeHints[manualSuburb.trim().toLowerCase()];
+  const postcodeLooksValid = manualPostcode.trim().length === 4;
+  const postcodeMismatch = Boolean(
+    suburbHint && postcodeLooksValid && (suburbHint.state !== manualState || suburbHint.postcode !== manualPostcode.trim())
+  );
 
   function handleManualSubmit() {
     const address = manualAddress.trim();
@@ -323,7 +337,15 @@ export function SearchPanel({ options, selected, onChange, onManualSubmit, mapOp
                     <TextField
                       label="Suburb"
                       value={manualSuburb}
-                      onChange={(event) => setManualSuburb(event.target.value)}
+                      onChange={(event) => {
+                        const nextSuburb = event.target.value;
+                        setManualSuburb(nextSuburb);
+                        const hint = suburbPostcodeHints[nextSuburb.trim().toLowerCase()];
+                        if (hint) {
+                          setManualState(hint.state);
+                          setManualPostcode(hint.postcode);
+                        }
+                      }}
                       fullWidth
                     />
                     <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
@@ -333,6 +355,7 @@ export function SearchPanel({ options, selected, onChange, onManualSubmit, mapOp
                         value={manualState}
                         onChange={(event) => setManualState(event.target.value)}
                         fullWidth
+                        error={postcodeMismatch}
                       >
                         {australianStates.map((state) => (
                           <MenuItem key={state} value={state}>
@@ -345,6 +368,12 @@ export function SearchPanel({ options, selected, onChange, onManualSubmit, mapOp
                         value={manualPostcode}
                         onChange={(event) => setManualPostcode(event.target.value.replace(/[^\d]/g, '').slice(0, 4))}
                         fullWidth
+                        error={postcodeMismatch}
+                        helperText={
+                          postcodeMismatch && suburbHint
+                            ? `${manualSuburb.trim()} is usually ${suburbHint.state} ${suburbHint.postcode}`
+                            : ' '
+                        }
                       />
                     </Stack>
                     <TextField
@@ -358,7 +387,7 @@ export function SearchPanel({ options, selected, onChange, onManualSubmit, mapOp
                       <MenuItem value="house">House</MenuItem>
                     </TextField>
                     <Stack direction="row" spacing={1.5}>
-                      <Button variant="contained" onClick={handleManualSubmit}>
+                      <Button variant="contained" onClick={handleManualSubmit} disabled={postcodeMismatch}>
                         Use manual property
                       </Button>
                       <Button variant="text" onClick={() => setManualMode(false)}>
