@@ -6,17 +6,11 @@ import { fetchScrapflyContent } from './scrapfly.js';
 import { average, uniqueBy } from './utils.js';
 import { validateOutput } from './validation.js';
 
-const DEFAULT_URLS = {
-  realestate: 'https://www.realestate.com.au/property/unit-705-60-riversdale-rd-rivervale-wa-6103/',
-  domain: 'https://www.domain.com.au/property-profile/705-60-riversdale-road-rivervale-wa-6103',
-  property: 'https://www.property.com.au/wa/rivervale-6103/riversdale-rd/705-60-pid-20009700/'
-};
-
-function emptySiteEstimates(input: PropertyGrowthInput) {
+function emptySiteEstimates(input: PropertyGrowthInput, urls: { realestate: string; domain: string; property: string }) {
   return {
-    realestate_com_au: extractRealestate('', input.knownUrls?.realestate ?? DEFAULT_URLS.realestate, input.address),
-    domain_com_au: extractDomain('', input.knownUrls?.domain ?? DEFAULT_URLS.domain, input.address),
-    property_com_au: extractProperty('', input.knownUrls?.property ?? DEFAULT_URLS.property, input.address)
+    realestate_com_au: extractRealestate('', urls.realestate, input.address),
+    domain_com_au: extractDomain('', urls.domain, input.address),
+    property_com_au: extractProperty('', urls.property, input.address)
   };
 }
 
@@ -68,12 +62,12 @@ export async function estimatePropertyGrowth(input: PropertyGrowthInput, _proxyU
   const assumptions: string[] = [];
   const suburbUrls = buildSuburbUrls(input);
   const urls = {
-    realestate: input.knownUrls?.realestate ?? suburbUrls?.realestate ?? DEFAULT_URLS.realestate,
-    domain: input.knownUrls?.domain ?? suburbUrls?.domain ?? DEFAULT_URLS.domain,
-    property: input.knownUrls?.property ?? suburbUrls?.property ?? DEFAULT_URLS.property
+    realestate: input.knownUrls?.realestate ?? suburbUrls.realestate,
+    domain: input.knownUrls?.domain ?? suburbUrls.domain,
+    property: input.knownUrls?.property ?? suburbUrls.property
   };
 
-  const siteEstimates = emptySiteEstimates(input);
+  const siteEstimates = emptySiteEstimates(input, urls);
 
   const apiKey = process.env.SCRAPFLY_API_KEY;
 

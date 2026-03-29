@@ -76,7 +76,7 @@ function renderComparableRows(rows: ComparableRecord[]) {
       <TableCell align="center">
         {row.sourceUrl ? (
           <Link href={row.sourceUrl} target="_blank" rel="noreferrer" underline="hover">
-            Property link
+            Site page
           </Link>
         ) : (
           '—'
@@ -165,7 +165,7 @@ export function SourceEstimateList({ siteEstimates, selectedComparables }: Sourc
                       <TableCell align="center">
                         {row.sourceUrl ? (
                           <Link href={row.sourceUrl} target="_blank" rel="noreferrer" underline="hover">
-                            View property
+                            View site page
                           </Link>
                         ) : (
                           '—'
