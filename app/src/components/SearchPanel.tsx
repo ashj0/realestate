@@ -165,6 +165,7 @@ export function SearchPanel({ options, selected, onChange, onManualSubmit, mapOp
   const [manualPostcode, setManualPostcode] = useState('');
   const [manualPropertyType, setManualPropertyType] = useState<'house' | 'unit'>('unit');
   const [manualSuccessMessage, setManualSuccessMessage] = useState('');
+  const [manualSelectionActive, setManualSelectionActive] = useState(false);
 
   useEffect(() => {
     setAutocompleteOptions((current) => {
@@ -175,6 +176,7 @@ export function SearchPanel({ options, selected, onChange, onManualSubmit, mapOp
 
     setSearchText(selected?.address ?? '');
     setExpanded(!selected);
+    setManualSelectionActive(Boolean(selected?.isManual));
 
     if (selected?.isManual) {
       setManualDialogOpen(false);
@@ -217,7 +219,7 @@ export function SearchPanel({ options, selected, onChange, onManualSubmit, mapOp
   }, [options, autocompleteOptions]);
 
   const showManualFallback =
-    !selected?.isManual && !manualDialogOpen && searchText.trim().length >= 3 && !loading && autocompleteOptions.length === 0;
+    !manualSelectionActive && !selected?.isManual && !manualDialogOpen && searchText.trim().length >= 3 && !loading && autocompleteOptions.length === 0;
   const suburbHint = suburbPostcodeHints[manualSuburb.trim().toLowerCase()];
   const postcodeLooksValid = manualPostcode.trim().length === 4;
   const postcodeMismatch = Boolean(
@@ -258,6 +260,7 @@ export function SearchPanel({ options, selected, onChange, onManualSubmit, mapOp
       propertyType: manualPropertyType,
     });
 
+    setManualSelectionActive(true);
     setSearchText(fullAddress);
     setManualSuccessMessage(`Manual property selected: ${fullAddress}`);
     setManualDialogOpen(false);
