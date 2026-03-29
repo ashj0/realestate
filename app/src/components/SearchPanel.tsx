@@ -267,55 +267,51 @@ export function SearchPanel({ options, selected, onChange, onManualSubmit, mapOp
 
           <Collapse in={expanded || !selected}>
             <Stack spacing={2.5}>
-              <Autocomplete
-                filterOptions={(items) => items}
-                options={autocompleteOptions}
-                value={manualMode ? null : selected}
-                inputValue={manualMode ? manualAddress : searchText}
-                onInputChange={(_, value) => {
-                  if (manualMode) {
-                    setManualAddress(value);
-                  } else {
-                    setSearchText(value);
-                  }
-                }}
-                onChange={(_, value) => onChange(value)}
-                getOptionLabel={(option) => option.address}
-                isOptionEqualToValue={(option, value) => option.id === value.id}
-                noOptionsText={searchText.trim().length < 3 ? 'Type at least 3 characters' : 'No matching properties found'}
-                renderOption={(props, option) => (
-                  <Box component="li" {...props}>
-                    <Stack spacing={0.5} py={0.5}>
-                      <Typography fontWeight={700}>{option.address}</Typography>
-                      <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-                        <Chip size="small" label={`${option.suburb}, ${option.state} ${option.postcode}`} />
-                        <Chip size="small" variant="outlined" icon={<HomeWorkRoundedIcon />} label={option.propertyType} />
+              {!manualMode ? (
+                <Autocomplete
+                  filterOptions={(items) => items}
+                  options={autocompleteOptions}
+                  value={selected}
+                  inputValue={searchText}
+                  onInputChange={(_, value) => setSearchText(value)}
+                  onChange={(_, value) => onChange(value)}
+                  getOptionLabel={(option) => option.address}
+                  isOptionEqualToValue={(option, value) => option.id === value.id}
+                  noOptionsText={searchText.trim().length < 3 ? 'Type at least 3 characters' : 'No matching properties found'}
+                  renderOption={(props, option) => (
+                    <Box component="li" {...props}>
+                      <Stack spacing={0.5} py={0.5}>
+                        <Typography fontWeight={700}>{option.address}</Typography>
+                        <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+                          <Chip size="small" label={`${option.suburb}, ${option.state} ${option.postcode}`} />
+                          <Chip size="small" variant="outlined" icon={<HomeWorkRoundedIcon />} label={option.propertyType} />
+                        </Stack>
                       </Stack>
-                    </Stack>
-                  </Box>
-                )}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Property"
-                    placeholder="Type an address"
-                    InputProps={{
-                      ...params.InputProps,
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <SearchRoundedIcon />
-                        </InputAdornment>
-                      ),
-                      endAdornment: (
-                        <>
-                          {loading ? <CircularProgress color="inherit" size={18} /> : null}
-                          {params.InputProps.endAdornment}
-                        </>
-                      ),
-                    }}
-                  />
-                )}
-              />
+                    </Box>
+                  )}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="Property"
+                      placeholder="Type an address"
+                      InputProps={{
+                        ...params.InputProps,
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <SearchRoundedIcon />
+                          </InputAdornment>
+                        ),
+                        endAdornment: (
+                          <>
+                            {loading ? <CircularProgress color="inherit" size={18} /> : null}
+                            {params.InputProps.endAdornment}
+                          </>
+                        ),
+                      }}
+                    />
+                  )}
+                />
+              ) : null}
 
               {showManualFallback ? (
                 <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 4, bgcolor: 'warning.50' }}>
