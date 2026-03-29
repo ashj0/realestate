@@ -163,19 +163,22 @@ export function SearchPanel({ options, selected, onChange, onManualSubmit, mapOp
   const [manualPropertyType, setManualPropertyType] = useState<'house' | 'unit'>('unit');
 
   useEffect(() => {
-    if (!manualMode) {
-      setSearchText(selected?.address ?? '');
-    }
     setAutocompleteOptions((current) => {
       if (!selected) return current;
       const next = [selected, ...current.filter((option) => option.id !== selected.id)];
       return next.slice(0, 8);
     });
-    setExpanded(!selected);
+
+    if (!manualMode) {
+      setSearchText(selected?.address ?? '');
+      setExpanded(!selected);
+    }
+
     if (!selected) {
       setManualMode(false);
+      setSearchText('');
     }
-  }, [selected, manualMode]);
+  }, [selected]);
 
   useEffect(() => {
     const query = searchText.trim();
@@ -324,6 +327,10 @@ export function SearchPanel({ options, selected, onChange, onManualSubmit, mapOp
                       setExpanded(true);
                       setManualMode(true);
                       setManualAddress(searchText.trim());
+                      setManualSuburb('');
+                      setManualState('WA');
+                      setManualPostcode('');
+                      setManualPropertyType('unit');
                     }}>
                       Enter address manually
                     </Button>
