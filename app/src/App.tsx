@@ -203,8 +203,18 @@ export default function App() {
                 apiBaseUrl={API_BASE_URL}
               />
               <SelectedSuburbCard property={selectedProperty} />
+              {result ? (
+                <EstimateSummaryCard
+                  result={result}
+                  loanBalance={Number(loanBalance) || 0}
+                  sellingCostPercent={Number(sellingCostPercent) || 0}
+                  existingLoanInterestRate={Number(existingLoanInterestRate) || 0}
+                  retainedEquityPercent={Number(retainedEquityPercent) || 0}
+                />
+              ) : null}
             </Stack>
-            <Box sx={{ minWidth: 0 }}>
+
+            <Stack spacing={2} sx={{ minWidth: 0 }}>
               <ValuationForm
                 valuation={lastYearValuation}
                 loanBalance={loanBalance}
@@ -219,7 +229,8 @@ export default function App() {
                 disabled={!canGenerate || loading}
                 onSubmit={handleGenerateEstimate}
               />
-            </Box>
+              {result ? <SourceBreakdown siteEstimates={result.siteEstimates} /> : null}
+            </Stack>
           </Box>
 
           {loading ? (
@@ -232,28 +243,6 @@ export default function App() {
 
           {result ? (
             <Stack spacing={2} sx={{ mt: 0 }}>
-              <Box
-                sx={{
-                  display: 'grid',
-                  gap: 2,
-                  gridTemplateColumns: { xs: '1fr', lg: 'minmax(0, 7fr) minmax(320px, 3fr)' },
-                  alignItems: { xs: 'start', lg: 'stretch' },
-                }}
-              >
-                <Box sx={{ minWidth: 0, display: 'flex' }}>
-                  <EstimateSummaryCard
-                    result={result}
-                    loanBalance={Number(loanBalance) || 0}
-                    sellingCostPercent={Number(sellingCostPercent) || 0}
-                    existingLoanInterestRate={Number(existingLoanInterestRate) || 0}
-                    retainedEquityPercent={Number(retainedEquityPercent) || 0}
-                  />
-                </Box>
-                <Box sx={{ minWidth: 0, display: 'flex' }}>
-                  <SourceBreakdown siteEstimates={result.siteEstimates} />
-                </Box>
-              </Box>
-
               <Box
                 sx={{
                   display: 'grid',
