@@ -175,6 +175,10 @@ export function SearchPanel({ options, selected, onChange, onManualSubmit, mapOp
 
     setSearchText(selected?.address ?? '');
     setExpanded(!selected);
+
+    if (selected?.isManual) {
+      setManualDialogOpen(false);
+    }
   }, [selected]);
 
   useEffect(() => {
@@ -212,7 +216,8 @@ export function SearchPanel({ options, selected, onChange, onManualSubmit, mapOp
     return Array.from(lookup.values());
   }, [options, autocompleteOptions]);
 
-  const showManualFallback = searchText.trim().length >= 3 && !loading && autocompleteOptions.length === 0;
+  const showManualFallback =
+    !selected?.isManual && !manualDialogOpen && searchText.trim().length >= 3 && !loading && autocompleteOptions.length === 0;
   const suburbHint = suburbPostcodeHints[manualSuburb.trim().toLowerCase()];
   const postcodeLooksValid = manualPostcode.trim().length === 4;
   const postcodeMismatch = Boolean(
