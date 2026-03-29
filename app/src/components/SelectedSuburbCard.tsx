@@ -9,7 +9,7 @@ interface SelectedSuburbCardProps {
 
 export function SelectedSuburbCard({ property }: SelectedSuburbCardProps) {
   return (
-    <Paper sx={{ p: 3 }}>
+    <Paper sx={{ p: 3, width: '100%' }}>
       <Stack spacing={2}>
         <Stack direction="row" spacing={1} alignItems="center">
           <LocationOnRoundedIcon color="primary" />

@@ -7,6 +7,7 @@ import {
   Grid,
   Stack,
 } from '@mui/material';
+import { AlignedAnalysisRow } from './components/AlignedAnalysisRow';
 import { Header } from './components/Header';
 import { SearchPanel } from './components/SearchPanel';
 import { SelectedSuburbCard } from './components/SelectedSuburbCard';
@@ -88,35 +89,34 @@ export default function App() {
           <Header />
 
           <Stack spacing={2}>
-            <Box
-              sx={{
-                display: 'grid',
-                gap: 2,
-                gridTemplateColumns: { xs: '1fr', lg: '7fr 3fr' },
-                alignItems: 'stretch',
-              }}
-            >
-              <SearchPanel
-                options={propertyOptions}
-                selected={selectedProperty}
-                onChange={setSelectedProperty}
-                mapOpen={showMap}
-                onMapOpen={() => setShowMap(true)}
-                onMapClose={() => setShowMap(false)}
-                apiBaseUrl={API_BASE_URL}
-              />
-
-              <Box sx={{ display: 'flex', gridRow: { xs: 'auto', lg: 'span 2' } }}>
-                <ValuationForm
-                  valuation={lastYearValuation}
-                  onChange={setLastYearValuation}
-                  disabled={!canGenerate || loading}
-                  onSubmit={handleGenerateEstimate}
+            <AlignedAnalysisRow
+              left={
+                <SearchPanel
+                  options={propertyOptions}
+                  selected={selectedProperty}
+                  onChange={setSelectedProperty}
+                  mapOpen={showMap}
+                  onMapOpen={() => setShowMap(true)}
+                  onMapClose={() => setShowMap(false)}
+                  apiBaseUrl={API_BASE_URL}
                 />
-              </Box>
+              }
+              right={
+                <Box sx={{ gridRow: { xs: 'auto', lg: 'span 2' }, width: '100%' }}>
+                  <ValuationForm
+                    valuation={lastYearValuation}
+                    onChange={setLastYearValuation}
+                    disabled={!canGenerate || loading}
+                    onSubmit={handleGenerateEstimate}
+                  />
+                </Box>
+              }
+            />
 
-              <SelectedSuburbCard property={selectedProperty} />
-            </Box>
+            <AlignedAnalysisRow
+              left={<SelectedSuburbCard property={selectedProperty} />}
+              right={<Box sx={{ display: { xs: 'none', lg: 'block' }, width: '100%' }} />}
+            />
           </Stack>
 
           {loading ? (
@@ -129,21 +129,10 @@ export default function App() {
 
           {result ? (
             <Stack spacing={2}>
-              <Box
-                sx={{
-                  display: 'grid',
-                  gap: 2,
-                  gridTemplateColumns: { xs: '1fr', lg: '7fr 3fr' },
-                  alignItems: 'stretch',
-                }}
-              >
-                <Box sx={{ display: 'flex' }}>
-                  <EstimateSummaryCard result={result} />
-                </Box>
-                <Box sx={{ display: 'flex' }}>
-                  <SourceBreakdown siteEstimates={result.siteEstimates} />
-                </Box>
-              </Box>
+              <AlignedAnalysisRow
+                left={<EstimateSummaryCard result={result} />}
+                right={<SourceBreakdown siteEstimates={result.siteEstimates} />}
+              />
 
               <SourceEstimateList
                 siteEstimates={result.siteEstimates}

@@ -23,7 +23,7 @@ export function SourceBreakdown({ siteEstimates }: SourceBreakdownProps) {
   const rows = estimateRows(siteEstimates);
 
   return (
-    <Paper sx={{ p: 3.5, height: '100%' }}>
+    <Paper sx={{ p: 3.5, height: '100%', width: '100%' }}>
       <Stack spacing={2.5} sx={{ height: '100%' }}>
         <div>
           <Typography variant="h5" gutterBottom>

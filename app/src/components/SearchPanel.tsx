@@ -192,7 +192,7 @@ export function SearchPanel({ options, selected, onChange, mapOpen, onMapOpen, o
 
   return (
     <>
-      <Paper sx={{ p: selected ? 2.25 : 3.5 }}>
+      <Paper sx={{ p: selected ? 2.25 : 3.5, width: '100%' }}>
         <Stack spacing={selected ? 1.5 : 3}>
           <Stack direction="row" justifyContent="space-between" alignItems="center" gap={2}>
             <Box>
