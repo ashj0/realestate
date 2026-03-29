@@ -10,6 +10,11 @@ interface ResolvedKnownUrls {
   property?: string;
 }
 
+interface CandidateLink {
+  url: string;
+  text: string;
+}
+
 function normalizeAddress(value: string): string {
   return normalizeWhitespace(value)
     .toLowerCase()
@@ -17,31 +22,61 @@ function normalizeAddress(value: string): string {
     .trim();
 }
 
-function scoreCandidate(candidateUrl: string, address: string, suburb: string): number {
-  const haystack = normalizeAddress(`${candidateUrl} ${address} ${suburb}`);
-  const target = normalizeAddress(address);
-  const suburbTarget = normalizeAddress(suburb);
+function buildAddressSignals(input: PropertyGrowthInput) {
+  const normalized = normalizeAddress(input.address);
+  const parts = normalized.split(' ').filter(Boolean);
+  const houseNumber = parts.find((part) => /^\d+[a-z]?$/.test(part)) ?? '';
+  const streetParts = parts.filter((part) => part !== houseNumber);
+  const suburb = normalizeAddress(input.suburb);
 
-  let score = 0;
-  if (haystack.includes(target)) score += 10;
-
-  const targetParts = target.split(' ').filter(Boolean);
-  for (const part of targetParts) {
-    if (part.length >= 2 && haystack.includes(part)) score += 1;
-  }
-
-  if (suburbTarget && haystack.includes(suburbTarget)) score += 2;
-  return score;
+  return {
+    normalized,
+    houseNumber,
+    streetParts,
+    suburb,
+  };
 }
 
-function uniqueHttpUrls(urls: Array<string | undefined | null>): string[] {
-  return Array.from(new Set(urls.filter((value): value is string => Boolean(value && /^https?:\/\//i.test(value)))));
+function scoreCandidate(candidate: CandidateLink, input: PropertyGrowthInput): number {
+  const candidateText = normalizeAddress(`${candidate.url} ${candidate.text}`);
+  const signals = buildAddressSignals(input);
+
+  if (!candidateText) return -1;
+
+  let score = 0;
+
+  if (signals.normalized && candidateText.includes(signals.normalized)) score += 20;
+  if (signals.houseNumber && candidateText.includes(signals.houseNumber)) score += 5;
+
+  const matchedStreetParts = signals.streetParts.filter((part) => part.length >= 3 && candidateText.includes(part));
+  score += matchedStreetParts.length * 2;
+
+  if (signals.suburb && candidateText.includes(signals.suburb)) score += 3;
+
+  if (candidate.url.endsWith('/property/') || /\/property\/?$/i.test(candidate.url)) score -= 20;
+
+  const strongAddressMatch = Boolean(
+    signals.houseNumber && matchedStreetParts.length >= 1 && candidateText.includes(signals.houseNumber)
+  );
+
+  return strongAddressMatch || candidateText.includes(signals.normalized) ? score : -1;
+}
+
+function uniqueCandidates(candidates: CandidateLink[]): CandidateLink[] {
+  const seen = new Set<string>();
+  const output: CandidateLink[] = [];
+
+  for (const candidate of candidates) {
+    if (seen.has(candidate.url)) continue;
+    seen.add(candidate.url);
+    output.push(candidate);
+  }
+
+  return output;
 }
 
 function extractMatchingUrl(content: string, baseUrl: string, input: PropertyGrowthInput, site: 'realestate' | 'domain' | 'property'): string | undefined {
   const $ = load(content);
-  const address = input.address;
-  const suburb = input.suburb;
   const selectors = [
     'a[href*="realestate.com.au"]',
     'a[href*="domain.com.au"]',
@@ -50,30 +85,33 @@ function extractMatchingUrl(content: string, baseUrl: string, input: PropertyGro
     'a[href^="http"]'
   ];
 
-  const rawUrls: string[] = [];
+  const rawCandidates: CandidateLink[] = [];
   for (const selector of selectors) {
     $(selector).each((_, element) => {
       const href = $(element).attr('href');
       if (!href) return;
       try {
-        rawUrls.push(new URL(href, baseUrl).toString());
+        const url = new URL(href, baseUrl).toString();
+        const text = normalizeWhitespace($(element).text());
+        rawCandidates.push({ url, text });
       } catch {
         // ignore invalid hrefs
       }
     });
   }
 
-  const filtered = uniqueHttpUrls(rawUrls).filter((url) => {
-    if (site === 'realestate') return /realestate\.com\.au\/property\//i.test(url);
-    if (site === 'domain') return /domain\.com\.au\/property-profile\//i.test(url);
-    return /property\.com\.au\//i.test(url) && /pid-|\/unit-|\/house-/i.test(url);
+  const filtered = uniqueCandidates(rawCandidates).filter((candidate) => {
+    if (site === 'realestate') return /realestate\.com\.au\/property\//i.test(candidate.url) && !/\/property\/?$/i.test(candidate.url);
+    if (site === 'domain') return /domain\.com\.au\/property-profile\//i.test(candidate.url);
+    return /property\.com\.au\//i.test(candidate.url) && /pid-|\/unit-|\/house-|\/apartment-/i.test(candidate.url);
   });
 
   const ranked = filtered
-    .map((url) => ({ url, score: scoreCandidate(url, address, suburb) }))
+    .map((candidate) => ({ ...candidate, score: scoreCandidate(candidate, input) }))
+    .filter((candidate) => candidate.score > 0)
     .sort((a, b) => b.score - a.score);
 
-  return ranked[0]?.score > 0 ? ranked[0].url : undefined;
+  return ranked[0]?.url;
 }
 
 function buildSearchUrl(input: PropertyGrowthInput, site: 'realestate' | 'domain' | 'property'): string {
