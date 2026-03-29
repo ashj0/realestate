@@ -1,6 +1,6 @@
 import { load } from 'cheerio';
+import { parseLocationParts, slugifySegment } from './location.js';
 import { fetchScrapflyContent } from './scrapfly.js';
-import { slugifySegment } from './location.js';
 import { normalizeWhitespace } from './utils.js';
 import type { PropertyGrowthInput } from './types.js';
 
@@ -134,6 +134,38 @@ function extractMatchingUrl(content: string, baseUrl: string, input: PropertyGro
   };
 }
 
+function buildAddressSlug(input: PropertyGrowthInput): string {
+  const location = parseLocationParts(input);
+  const beforeSuburb = input.address.split(',')[0]?.trim() ?? input.address.trim();
+  return slugifySegment(`${beforeSuburb} ${location.suburb} ${location.state} ${location.postCode}`);
+}
+
+function buildDirectPropertyUrlGuesses(input: PropertyGrowthInput, site: 'realestate' | 'domain' | 'property'): string[] {
+  const location = parseLocationParts(input);
+  const addressSlug = buildAddressSlug(input);
+  const streetOnly = slugifySegment(input.address.split(',')[0] ?? input.address);
+
+  if (site === 'realestate') {
+    return [
+      `https://www.realestate.com.au/property-${addressSlug}/`,
+      `https://www.realestate.com.au/property-house-${addressSlug}/`,
+      `https://www.realestate.com.au/property-unit-${addressSlug}/`
+    ];
+  }
+
+  if (site === 'domain') {
+    return [
+      `https://www.domain.com.au/property-profile/${addressSlug}`,
+      `https://www.domain.com.au/property-profile/${streetOnly}-${slugifySegment(location.suburb)}-${location.state}-${location.postCode}`
+    ];
+  }
+
+  return [
+    `https://www.property.com.au/${location.state}/${slugifySegment(location.suburb)}-${location.postCode}/${streetOnly}/`,
+    `https://www.property.com.au/${location.state}/${slugifySegment(location.suburb)}-${location.postCode}/${streetOnly}-pid-1/`
+  ];
+}
+
 function buildSearchUrls(input: PropertyGrowthInput, site: 'realestate' | 'domain' | 'property'): string[] {
   const query = encodeURIComponent(compactAddressQuery(input));
   const state = String(input.state ?? '').toLowerCase();
@@ -142,8 +174,7 @@ function buildSearchUrls(input: PropertyGrowthInput, site: 'realestate' | 'domai
   if (site === 'realestate') {
     return [
       `https://www.realestate.com.au/buy/in-${suburbSlug}%2c+${state}+${input.postCode}/list-1?keywords=${query}`,
-      `https://www.realestate.com.au/find-agent/in-${suburbSlug}%2c+${state}+${input.postCode}?keywords=${query}`,
-      `https://www.realestate.com.au/property/`
+      `https://www.realestate.com.au/find-agent/in-${suburbSlug}%2c+${state}+${input.postCode}?keywords=${query}`
     ];
   }
 
@@ -160,7 +191,32 @@ function buildSearchUrls(input: PropertyGrowthInput, site: 'realestate' | 'domai
   ];
 }
 
+async function firstReachableUrl(urls: string[], apiKey: string): Promise<string | undefined> {
+  for (const url of urls) {
+    try {
+      const content = await fetchScrapflyContent(url, apiKey);
+      if (content && content.length > 5000) {
+        return url;
+      }
+    } catch {
+      // keep trying
+    }
+  }
+  return undefined;
+}
+
 async function resolveSiteUrl(input: PropertyGrowthInput, apiKey: string, site: 'realestate' | 'domain' | 'property'): Promise<ResolvedSiteUrl> {
+  const directGuesses = buildDirectPropertyUrlGuesses(input, site);
+  const directUrl = await firstReachableUrl(directGuesses, apiKey);
+  if (directUrl) {
+    return {
+      url: directUrl,
+      resolution: 'resolved-property',
+      matchedCandidate: directUrl,
+      reason: 'Resolved property URL from direct address pattern'
+    };
+  }
+
   const searchUrls = buildSearchUrls(input, site);
 
   for (const searchUrl of searchUrls) {
@@ -184,7 +240,7 @@ async function resolveSiteUrl(input: PropertyGrowthInput, apiKey: string, site: 
   return {
     resolution: 'fallback-suburb',
     searchUrl: searchUrls[0],
-    reason: 'No confident property URL match found from provider search results'
+    reason: 'No confident property URL match found from direct guesses or provider search results'
   };
 }
 
