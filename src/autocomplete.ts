@@ -1,5 +1,22 @@
 import axios from 'axios';
 
+function normalizeAutocompleteQuery(query: string): string[] {
+  const trimmed = query.trim().replace(/\s+/g, ' ');
+  if (!trimmed) return [];
+
+  const variants = new Set<string>([trimmed]);
+  const slashMatch = trimmed.match(/^(\d+)\s*\/\s*(.+)$/);
+
+  if (slashMatch) {
+    const [, unitNumber, remainder] = slashMatch;
+    variants.add(remainder.trim());
+    variants.add(`Unit ${unitNumber} ${remainder.trim()}`);
+    variants.add(`Apartment ${unitNumber} ${remainder.trim()}`);
+  }
+
+  return Array.from(variants);
+}
+
 export interface PropertyAutocompleteSuggestion {
   id: string;
   address: string;
@@ -97,27 +114,32 @@ export async function searchPropertyAutocomplete(query: string): Promise<Propert
   const trimmed = query.trim();
   if (trimmed.length < 3) return [];
 
-  const response = await axios.get<NominatimResult[]>('https://nominatim.openstreetmap.org/search', {
-    params: {
-      q: trimmed,
-      format: 'jsonv2',
-      addressdetails: 1,
-      limit: 8,
-      countrycodes: 'au',
-    },
-    headers: {
-      'User-Agent': 'property-growth-estimator-app/0.1 (+local development)',
-      Accept: 'application/json',
-    },
-    timeout: 10000,
-  });
-
+  const queryVariants = normalizeAutocompleteQuery(trimmed);
   const deduped = new Map<string, PropertyAutocompleteSuggestion>();
 
-  for (const item of response.data) {
-    const suggestion = toSuggestion(item);
-    if (!suggestion) continue;
-    deduped.set(suggestion.address.toLowerCase(), suggestion);
+  for (const variant of queryVariants) {
+    const response = await axios.get<NominatimResult[]>('https://nominatim.openstreetmap.org/search', {
+      params: {
+        q: variant,
+        format: 'jsonv2',
+        addressdetails: 1,
+        limit: 8,
+        countrycodes: 'au',
+      },
+      headers: {
+        'User-Agent': 'property-growth-estimator-app/0.1 (+local development)',
+        Accept: 'application/json',
+      },
+      timeout: 10000,
+    });
+
+    for (const item of response.data) {
+      const suggestion = toSuggestion(item);
+      if (!suggestion) continue;
+      deduped.set(suggestion.address.toLowerCase(), suggestion);
+    }
+
+    if (deduped.size >= 6) break;
   }
 
   return Array.from(deduped.values()).slice(0, 6);
