@@ -1,14 +1,11 @@
 import { useMemo, useState } from 'react';
-import ApartmentRoundedIcon from '@mui/icons-material/ApartmentRounded';
 import {
   Alert,
   Box,
-  Button,
   CircularProgress,
   Container,
   Grid,
   Stack,
-  Typography,
 } from '@mui/material';
 import { Header } from './components/Header';
 import { SearchPanel } from './components/SearchPanel';
@@ -106,35 +103,12 @@ export default function App() {
             </Grid>
 
             <Grid size={{ xs: 12, lg: 4 }}>
-              <Stack spacing={3}>
-                <ValuationForm
-                  valuation={lastYearValuation}
-                  onChange={setLastYearValuation}
-                  disabled={!canGenerate || loading}
-                  onSubmit={handleGenerateEstimate}
-                />
-                <Box
-                  sx={{
-                    p: 3,
-                    borderRadius: 5,
-                    bgcolor: 'rgba(255,255,255,0.6)',
-                    border: '1px solid rgba(29,53,87,0.08)',
-                  }}
-                >
-                  <Stack spacing={1.5}>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      What happens next
-                    </Typography>
-                    <Typography variant="h6">
-                      Once a property is selected, the app sends the suburb and property type to the API
-                      and returns growth data from realestate.com.au, Domain, and property.com.au.
-                    </Typography>
-                    <Button startIcon={<ApartmentRoundedIcon />} variant="text" sx={{ px: 0, alignSelf: 'flex-start' }}>
-                      Backend wired to /estimate
-                    </Button>
-                  </Stack>
-                </Box>
-              </Stack>
+              <ValuationForm
+                valuation={lastYearValuation}
+                onChange={setLastYearValuation}
+                disabled={!canGenerate || loading}
+                onSubmit={handleGenerateEstimate}
+              />
             </Grid>
           </Grid>
 
@@ -152,7 +126,7 @@ export default function App() {
                 <EstimateSummaryCard result={result} />
               </Grid>
               <Grid size={{ xs: 12, lg: 7 }}>
-                <SourceEstimateList siteEstimates={result.siteEstimates} />
+                <SourceEstimateList siteEstimates={result.siteEstimates} selectedComparables={result.selectedComparables} />
               </Grid>
             </Grid>
           ) : null}

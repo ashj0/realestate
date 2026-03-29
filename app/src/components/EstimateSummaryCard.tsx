@@ -19,6 +19,10 @@ function toConfidenceScore(value: EstimateApiResponse['confidence']) {
 }
 
 export function EstimateSummaryCard({ result }: EstimateSummaryCardProps) {
+  const lastYearValuation = result.input.lastYearValuation;
+  const currentValuation = result.result.currentValuation;
+  const increaseAmount = currentValuation === null ? null : currentValuation - lastYearValuation;
+
   return (
     <Paper sx={{ p: 3.5 }}>
       <Stack spacing={3}>
@@ -28,7 +32,10 @@ export function EstimateSummaryCard({ result }: EstimateSummaryCardProps) {
               Estimated current value
             </Typography>
             <Typography variant="h3">
-              {result.result.currentValuation === null ? 'Unavailable' : formatCurrency(result.result.currentValuation)}
+              {currentValuation === null ? 'Unavailable' : formatCurrency(currentValuation)}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75 }}>
+              Based on last year&apos;s valuation of {formatCurrency(lastYearValuation)}
             </Typography>
           </div>
           <Chip
@@ -39,24 +46,38 @@ export function EstimateSummaryCard({ result }: EstimateSummaryCardProps) {
         </Stack>
 
         <Grid container spacing={2}>
-          <Grid size={{ xs: 12, md: 6 }}>
-            <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 4 }}>
+          <Grid size={{ xs: 12, md: 4 }}>
+            <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 4, height: '100%' }}>
               <Stack spacing={1}>
-                <Typography color="text.secondary">Average suburb growth</Typography>
-                <Stack direction="row" spacing={1} alignItems="center">
-                  <TrendingUpRoundedIcon color={result.result.growthPercent !== null ? 'success' : 'disabled'} />
-                  <Typography variant="h5">
-                    {result.result.growthPercent === null ? 'Unavailable' : formatPercent(result.result.growthPercent)}
-                  </Typography>
-                </Stack>
+                <Typography color="text.secondary">Last year&apos;s valuation</Typography>
+                <Typography variant="h5">{formatCurrency(lastYearValuation)}</Typography>
               </Stack>
             </Paper>
           </Grid>
-          <Grid size={{ xs: 12, md: 6 }}>
-            <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 4 }}>
+          <Grid size={{ xs: 12, md: 4 }}>
+            <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 4, height: '100%' }}>
+              <Stack spacing={1}>
+                <Typography color="text.secondary">Property increase</Typography>
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <TrendingUpRoundedIcon color={increaseAmount !== null && increaseAmount >= 0 ? 'success' : 'disabled'} />
+                  <Typography variant="h5">
+                    {increaseAmount === null ? 'Unavailable' : formatCurrency(increaseAmount)}
+                  </Typography>
+                </Stack>
+                <Typography variant="body2" color="text.secondary">
+                  {result.result.growthPercent === null ? 'Growth unavailable' : `${formatPercent(result.result.growthPercent)} year-on-year`}
+                </Typography>
+              </Stack>
+            </Paper>
+          </Grid>
+          <Grid size={{ xs: 12, md: 4 }}>
+            <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 4, height: '100%' }}>
               <Stack spacing={1}>
                 <Typography color="text.secondary">Sources used</Typography>
                 <Typography variant="h5">{result.result.sitesUsed.length}</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {result.result.sitesUsed.length ? result.result.sitesUsed.join(' · ') : 'No sources available'}
+                </Typography>
               </Stack>
             </Paper>
           </Grid>

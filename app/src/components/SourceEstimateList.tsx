@@ -1,10 +1,25 @@
 import LaunchRoundedIcon from '@mui/icons-material/LaunchRounded';
-import { Button, Chip, Divider, Paper, Stack, Typography } from '@mui/material';
-import type { EstimateApiResponse, SiteEstimate } from '../types';
+import {
+  Box,
+  Button,
+  Chip,
+  Link,
+  Paper,
+  Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Typography,
+} from '@mui/material';
+import type { ComparableRecord, EstimateApiResponse, SiteEstimate } from '../types';
 import { formatCurrency, formatPercent } from '../utils';
 
 interface SourceEstimateListProps {
   siteEstimates: EstimateApiResponse['siteEstimates'];
+  selectedComparables: EstimateApiResponse['selectedComparables'];
 }
 
 function estimateRows(siteEstimates: EstimateApiResponse['siteEstimates']) {
@@ -15,68 +30,189 @@ function estimateRows(siteEstimates: EstimateApiResponse['siteEstimates']) {
   ];
 }
 
+function allSoldHistory(siteEstimates: EstimateApiResponse['siteEstimates']) {
+  return estimateRows(siteEstimates)
+    .flatMap((site) =>
+      site.soldHistory.map((item) => ({
+        date: item.date,
+        price: item.price,
+        source: item.source ?? site.label,
+        sourceUrl: item.sourceUrl ?? site.sourceUrl,
+      })),
+    )
+    .filter((item) => item.date || item.price || item.source)
+    .sort((a, b) => String(b.date ?? '').localeCompare(String(a.date ?? '')));
+}
+
 function growthLabel(site: SiteEstimate) {
   return site.suburbGrowthPercent === null ? 'Unavailable' : formatPercent(site.suburbGrowthPercent);
 }
 
-function medianLabel(site: SiteEstimate) {
-  return site.medianPrice === null ? 'Unavailable' : formatCurrency(site.medianPrice);
+function renderComparableRows(rows: ComparableRecord[]) {
+  if (!rows.length) {
+    return (
+      <TableRow>
+        <TableCell colSpan={4} sx={{ color: 'text.secondary' }}>
+          No comparable properties returned.
+        </TableCell>
+      </TableRow>
+    );
+  }
+
+  return rows.map((row, index) => (
+    <TableRow key={`${row.address}-${row.saleDate ?? index}`} hover>
+      <TableCell>{row.address}</TableCell>
+      <TableCell>{row.source ?? 'Unknown'}</TableCell>
+      <TableCell>{row.saleDate ?? '—'}</TableCell>
+      <TableCell>
+        {row.sourceUrl ? (
+          <Link href={row.sourceUrl} target="_blank" rel="noreferrer" underline="hover">
+            Open listing
+          </Link>
+        ) : (
+          '—'
+        )}
+      </TableCell>
+    </TableRow>
+  ));
 }
 
-export function SourceEstimateList({ siteEstimates }: SourceEstimateListProps) {
+export function SourceEstimateList({ siteEstimates, selectedComparables }: SourceEstimateListProps) {
   const rows = estimateRows(siteEstimates);
+  const soldHistoryRows = allSoldHistory(siteEstimates);
 
   return (
-    <Paper sx={{ p: 3.5 }}>
-      <Stack spacing={2.5}>
-        <div>
-          <Typography variant="h5" gutterBottom>
-            Source breakdown
-          </Typography>
-          <Typography color="text.secondary">
-            Suburb growth and median values fetched from the three configured property sites.
-          </Typography>
-        </div>
+    <Stack spacing={3}>
+      <Paper sx={{ p: 3.5 }}>
+        <Stack spacing={2.5}>
+          <div>
+            <Typography variant="h5" gutterBottom>
+              Source breakdown
+            </Typography>
+            <Typography color="text.secondary">
+              Growth signals and source links across the configured property sites.
+            </Typography>
+          </div>
 
-        <Stack divider={<Divider flexItem />}>
-          {rows.map((site) => (
-            <Stack key={site.label} spacing={1.5} sx={{ py: 1.5 }}>
-              <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={2}>
-                <div>
-                  <Typography fontWeight={700}>{site.label}</Typography>
-                  <Typography color="text.secondary">
-                    Growth: {growthLabel(site)} · Median: {medianLabel(site)}
-                  </Typography>
-                </div>
-                {site.sourceUrl ? (
-                  <Button
-                    variant="text"
-                    endIcon={<LaunchRoundedIcon />}
-                    component="a"
-                    href={site.sourceUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    Open source
-                  </Button>
-                ) : null}
-              </Stack>
+          <Stack spacing={1.5}>
+            {rows.map((site) => (
+              <Paper key={site.label} variant="outlined" sx={{ p: 2.25, borderRadius: 4 }}>
+                <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" spacing={2}>
+                  <Stack spacing={1}>
+                    <Typography fontWeight={700}>{site.label}</Typography>
+                    <Typography color="text.secondary">
+                      Growth: {growthLabel(site)}
+                    </Typography>
+                    <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+                      <Chip label={site.propertyTypeMatched ? 'Property type matched' : 'Property type mismatch'} size="small" />
+                      {site.medianPricePeriod ? <Chip label={site.medianPricePeriod} size="small" variant="outlined" /> : null}
+                    </Stack>
+                    {site.notes.length ? (
+                      <Typography variant="body2" color="text.secondary">
+                        {site.notes.join(' · ')}
+                      </Typography>
+                    ) : null}
+                  </Stack>
 
-              <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-                <Chip label={site.propertyTypeMatched ? 'Property type matched' : 'Property type mismatch'} size="small" />
-                {site.medianPricePeriod ? <Chip label={site.medianPricePeriod} size="small" variant="outlined" /> : null}
-                {site.estimateUpdatedAt ? <Chip label={`Updated ${site.estimateUpdatedAt}`} size="small" variant="outlined" /> : null}
-              </Stack>
-
-              {site.notes.length ? (
-                <Typography variant="body2" color="text.secondary">
-                  {site.notes.join(' · ')}
-                </Typography>
-              ) : null}
-            </Stack>
-          ))}
+                  {site.sourceUrl ? (
+                    <Box>
+                      <Button
+                        variant="text"
+                        endIcon={<LaunchRoundedIcon />}
+                        component="a"
+                        href={site.sourceUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        Open source
+                      </Button>
+                    </Box>
+                  ) : null}
+                </Stack>
+              </Paper>
+            ))}
+          </Stack>
         </Stack>
-      </Stack>
-    </Paper>
+      </Paper>
+
+      <Paper sx={{ p: 3.5 }}>
+        <Stack spacing={2}>
+          <div>
+            <Typography variant="h5" gutterBottom>
+              Sold history
+            </Typography>
+            <Typography color="text.secondary">
+              Historical sale points returned by the provider responses.
+            </Typography>
+          </div>
+
+          <TableContainer sx={{ maxHeight: 320, border: '1px solid rgba(29,53,87,0.08)', borderRadius: 3 }}>
+            <Table stickyHeader size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>Date</TableCell>
+                  <TableCell>Price</TableCell>
+                  <TableCell>Source</TableCell>
+                  <TableCell>Link</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {soldHistoryRows.length ? (
+                  soldHistoryRows.map((row, index) => (
+                    <TableRow key={`${row.source}-${row.date ?? index}`} hover>
+                      <TableCell>{row.date ?? '—'}</TableCell>
+                      <TableCell>{row.price === null ? '—' : formatCurrency(row.price)}</TableCell>
+                      <TableCell>{row.source ?? 'Unknown'}</TableCell>
+                      <TableCell>
+                        {row.sourceUrl ? (
+                          <Link href={row.sourceUrl} target="_blank" rel="noreferrer" underline="hover">
+                            Open
+                          </Link>
+                        ) : (
+                          '—'
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={4} sx={{ color: 'text.secondary' }}>
+                      No sold history returned.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Stack>
+      </Paper>
+
+      <Paper sx={{ p: 3.5 }}>
+        <Stack spacing={2}>
+          <div>
+            <Typography variant="h5" gutterBottom>
+              Comparables
+            </Typography>
+            <Typography color="text.secondary">
+              Comparable properties selected from the source results.
+            </Typography>
+          </div>
+
+          <TableContainer sx={{ maxHeight: 320, border: '1px solid rgba(29,53,87,0.08)', borderRadius: 3 }}>
+            <Table stickyHeader size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>Name</TableCell>
+                  <TableCell>Site</TableCell>
+                  <TableCell>Sale date</TableCell>
+                  <TableCell>Link</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>{renderComparableRows(selectedComparables)}</TableBody>
+            </Table>
+          </TableContainer>
+        </Stack>
+      </Paper>
+    </Stack>
   );
 }
