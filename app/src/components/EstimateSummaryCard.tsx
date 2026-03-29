@@ -25,8 +25,8 @@ export function EstimateSummaryCard({ result }: EstimateSummaryCardProps) {
   const isUp = increaseAmount !== null && increaseAmount > 0;
 
   return (
-    <Paper sx={{ p: 3.5 }}>
-      <Stack spacing={3}>
+    <Paper sx={{ p: 3.5, height: '100%' }}>
+      <Stack spacing={3} sx={{ height: '100%' }}>
         <Stack direction="row" justifyContent="space-between" alignItems="center" gap={2}>
           <div>
             <Typography variant="overline" color="text.secondary">

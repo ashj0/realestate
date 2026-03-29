@@ -87,9 +87,9 @@ export default function App() {
         <Stack spacing={2.5}>
           <Header />
 
-          <Grid container spacing={2}>
+          <Grid container spacing={2} alignItems="stretch">
             <Grid size={{ xs: 12, lg: 8 }}>
-              <Stack spacing={2}>
+              <Stack spacing={2} sx={{ height: '100%' }}>
                 <SearchPanel
                   options={propertyOptions}
                   selected={selectedProperty}
@@ -103,7 +103,7 @@ export default function App() {
               </Stack>
             </Grid>
 
-            <Grid size={{ xs: 12, lg: 4 }}>
+            <Grid size={{ xs: 12, lg: 4 }} sx={{ display: 'flex' }}>
               <ValuationForm
                 valuation={lastYearValuation}
                 onChange={setLastYearValuation}
@@ -123,11 +123,11 @@ export default function App() {
 
           {result ? (
             <Stack spacing={2}>
-              <Grid container spacing={2}>
-                <Grid size={{ xs: 12, lg: 4 }}>
+              <Grid container spacing={2} alignItems="stretch">
+                <Grid size={{ xs: 12, lg: 4 }} sx={{ display: 'flex' }}>
                   <EstimateSummaryCard result={result} />
                 </Grid>
-                <Grid size={{ xs: 12, lg: 8 }}>
+                <Grid size={{ xs: 12, lg: 8 }} sx={{ display: 'flex' }}>
                   <SourceBreakdown siteEstimates={result.siteEstimates} />
                 </Grid>
               </Grid>
