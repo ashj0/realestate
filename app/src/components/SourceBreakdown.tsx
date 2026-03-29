@@ -25,19 +25,20 @@ export function SourceBreakdown({ siteEstimates }: SourceBreakdownProps) {
   return (
     <Paper sx={{ p: 3.5, height: '100%', width: '100%' }}>
       <Stack spacing={2.5} sx={{ height: '100%' }}>
-        <div>
-          <Typography variant="h5" gutterBottom>
-            Source breakdown
-          </Typography>
+        <Stack spacing={1}>
+          <Typography variant="h5">Source breakdown</Typography>
           <Typography color="text.secondary">
             Growth signals and source links across the configured property sites.
           </Typography>
-        </div>
+          <Typography variant="body2" color="text.secondary">
+            Sources used: {rows.filter((site) => site.sourceUrl || site.suburbGrowthPercent !== null).length}
+          </Typography>
+        </Stack>
 
-        <Stack spacing={1.5}>
+        <Stack spacing={1.5} sx={{ flex: 1, justifyContent: 'space-between' }}>
           {rows.map((site) => (
-            <Paper key={site.label} variant="outlined" sx={{ p: 2.25, borderRadius: 4 }}>
-              <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" spacing={2}>
+            <Paper key={site.label} variant="outlined" sx={{ p: 2.25, borderRadius: 4, flex: 1 }}>
+              <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" spacing={2} sx={{ height: '100%' }}>
                 <Stack spacing={1}>
                   <Typography fontWeight={700}>{site.label}</Typography>
                   <Typography color="text.secondary">Growth: {growthLabel(site)}</Typography>

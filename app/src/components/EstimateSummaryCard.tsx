@@ -69,7 +69,7 @@ export function EstimateSummaryCard({ result }: EstimateSummaryCardProps) {
           <Grid size={{ xs: 12, sm: 6, xl: 3 }}>
             <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 4, height: '100%' }}>
               <Stack spacing={1}>
-                <Typography color="text.secondary">Principal</Typography>
+                <Typography color="text.secondary">Loan principal</Typography>
                 <Typography variant="h5">{formatCurrency(principal)}</Typography>
               </Stack>
             </Paper>
@@ -102,17 +102,6 @@ export function EstimateSummaryCard({ result }: EstimateSummaryCardProps) {
                 </Stack>
                 <Typography variant="body2" color="text.secondary">
                   Principal + property increase
-                </Typography>
-              </Stack>
-            </Paper>
-          </Grid>
-          <Grid size={{ xs: 12 }}>
-            <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 4, height: '100%' }}>
-              <Stack spacing={1}>
-                <Typography color="text.secondary">Sources used</Typography>
-                <Typography variant="h5">{result.result.sitesUsed.length}</Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {result.result.sitesUsed.length ? result.result.sitesUsed.join(' · ') : 'No sources available'}
                 </Typography>
               </Stack>
             </Paper>

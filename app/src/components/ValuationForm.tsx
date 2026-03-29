@@ -31,7 +31,7 @@ export function ValuationForm({
           fullWidth
         />
         <TextField
-          label="Principal"
+          label="Loan principal"
           value={principal}
           onChange={(event) => onPrincipalChange(event.target.value)}
           placeholder="e.g. 400000"
