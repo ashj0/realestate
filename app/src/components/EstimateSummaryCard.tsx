@@ -27,22 +27,30 @@ export function EstimateSummaryCard({ result }: EstimateSummaryCardProps) {
   return (
     <Paper sx={{ p: 3.5, height: '100%' }}>
       <Stack spacing={3} sx={{ height: '100%' }}>
-        <Stack direction="row" justifyContent="space-between" alignItems="center" gap={2}>
-          <div>
+        <Stack direction={{ xs: 'column', xl: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', xl: 'center' }} gap={2}>
+          <Box sx={{ minWidth: 0, flex: 1 }}>
             <Typography variant="overline" color="text.secondary">
               Estimated current value
             </Typography>
-            <Typography variant="h3" sx={{ color: isUp ? 'success.main' : 'text.primary' }}>
+            <Typography
+              variant="h3"
+              sx={{
+                color: isUp ? 'success.main' : 'text.primary',
+                wordBreak: 'break-word',
+                lineHeight: 1.05,
+              }}
+            >
               {currentValuation === null ? 'Unavailable' : formatCurrency(currentValuation)}
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75 }}>
               Based on last year&apos;s valuation of {formatCurrency(lastYearValuation)}
             </Typography>
-          </div>
+          </Box>
           <Chip
             icon={<VerifiedRoundedIcon />}
             label={`${toConfidenceLabel(result.confidence)} confidence · ${toConfidenceScore(result.confidence)}/100`}
             color={result.confidence === 'high' ? 'success' : result.confidence === 'medium' ? 'primary' : 'default'}
+            sx={{ maxWidth: '100%' }}
           />
         </Stack>
 
