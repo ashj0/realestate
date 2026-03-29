@@ -7,6 +7,7 @@ export interface PropertyOption {
   propertyType: 'house' | 'unit';
   lat: number;
   lng: number;
+  isManual?: boolean;
 }
 
 export type PropertyAutocompleteOption = PropertyOption;
