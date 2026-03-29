@@ -34,8 +34,8 @@ function buildAddressSignals(input: PropertyGrowthInput) {
   const normalized = normalizeAddress(input.address);
   const parts = normalized.split(' ').filter(Boolean);
   const houseNumber = parts.find((part) => /^\d+[a-z]?$/.test(part)) ?? '';
-  const streetParts = parts.filter((part) => part !== houseNumber);
   const suburb = normalizeAddress(input.suburb);
+  const streetParts = parts.filter((part) => part !== houseNumber && part !== suburb && part !== normalizeAddress(input.state ?? '') && part !== String(input.postCode ?? ''));
 
   return {
     normalized,
@@ -43,6 +43,10 @@ function buildAddressSignals(input: PropertyGrowthInput) {
     streetParts,
     suburb,
   };
+}
+
+function compactAddressQuery(input: PropertyGrowthInput): string {
+  return normalizeWhitespace(input.address);
 }
 
 function scoreCandidate(candidate: CandidateLink, input: PropertyGrowthInput): number {
@@ -57,7 +61,7 @@ function scoreCandidate(candidate: CandidateLink, input: PropertyGrowthInput): n
   if (signals.houseNumber && candidateText.includes(signals.houseNumber)) score += 5;
 
   const matchedStreetParts = signals.streetParts.filter((part) => part.length >= 3 && candidateText.includes(part));
-  score += matchedStreetParts.length * 2;
+  score += matchedStreetParts.length * 3;
 
   if (signals.suburb && candidateText.includes(signals.suburb)) score += 3;
 
@@ -130,18 +134,58 @@ function extractMatchingUrl(content: string, baseUrl: string, input: PropertyGro
   };
 }
 
-function buildSearchUrl(input: PropertyGrowthInput, site: 'realestate' | 'domain' | 'property'): string {
-  const query = encodeURIComponent(`${input.address} ${input.suburb} ${input.state ?? ''} ${input.postCode ?? ''}`.trim());
+function buildSearchUrls(input: PropertyGrowthInput, site: 'realestate' | 'domain' | 'property'): string[] {
+  const query = encodeURIComponent(compactAddressQuery(input));
+  const state = String(input.state ?? '').toLowerCase();
+  const suburbSlug = slugifySegment(input.suburb);
 
   if (site === 'realestate') {
-    return `https://www.realestate.com.au/buy/in-${slugifySegment(input.suburb)}%2c+${String(input.state ?? '').toLowerCase()}+${input.postCode}/list-1?keywords=${query}`;
+    return [
+      `https://www.realestate.com.au/buy/in-${suburbSlug}%2c+${state}+${input.postCode}/list-1?keywords=${query}`,
+      `https://www.realestate.com.au/find-agent/in-${suburbSlug}%2c+${state}+${input.postCode}?keywords=${query}`,
+      `https://www.realestate.com.au/property/`
+    ];
   }
 
   if (site === 'domain') {
-    return `https://www.domain.com.au/sale/${String(input.state ?? '').toLowerCase()}/${slugifySegment(input.suburb)}-${input.postCode}/?q=${query}`;
+    return [
+      `https://www.domain.com.au/sale/${state}/${suburbSlug}-${input.postCode}/?q=${query}`,
+      `https://www.domain.com.au/?q=${query}`
+    ];
   }
 
-  return `https://www.property.com.au/search/?q=${query}`;
+  return [
+    `https://www.property.com.au/search/?q=${query}`,
+    `https://www.property.com.au/${state}/${suburbSlug}-${input.postCode}/`
+  ];
+}
+
+async function resolveSiteUrl(input: PropertyGrowthInput, apiKey: string, site: 'realestate' | 'domain' | 'property'): Promise<ResolvedSiteUrl> {
+  const searchUrls = buildSearchUrls(input, site);
+
+  for (const searchUrl of searchUrls) {
+    try {
+      const content = await fetchScrapflyContent(searchUrl, apiKey);
+      const match = extractMatchingUrl(content, searchUrl, input, site);
+      if (match.url) {
+        return {
+          url: match.url,
+          resolution: 'resolved-property',
+          searchUrl,
+          matchedCandidate: match.matchedCandidate,
+          reason: match.reason,
+        };
+      }
+    } catch {
+      // try the next search strategy
+    }
+  }
+
+  return {
+    resolution: 'fallback-suburb',
+    searchUrl: searchUrls[0],
+    reason: 'No confident property URL match found from provider search results'
+  };
 }
 
 export async function resolveKnownUrls(input: PropertyGrowthInput, apiKey: string): Promise<ResolvedKnownUrls> {
@@ -160,27 +204,15 @@ export async function resolveKnownUrls(input: PropertyGrowthInput, apiKey: strin
   await Promise.all([
     (async () => {
       if (resolved.realestate.url) return;
-      const searchUrl = buildSearchUrl(input, 'realestate');
-      const match = extractMatchingUrl(await fetchScrapflyContent(searchUrl, apiKey), searchUrl, input, 'realestate');
-      resolved.realestate = match.url
-        ? { url: match.url, resolution: 'resolved-property', searchUrl, matchedCandidate: match.matchedCandidate, reason: match.reason }
-        : { resolution: 'fallback-suburb', searchUrl, reason: match.reason };
+      resolved.realestate = await resolveSiteUrl(input, apiKey, 'realestate');
     })(),
     (async () => {
       if (resolved.domain.url) return;
-      const searchUrl = buildSearchUrl(input, 'domain');
-      const match = extractMatchingUrl(await fetchScrapflyContent(searchUrl, apiKey), searchUrl, input, 'domain');
-      resolved.domain = match.url
-        ? { url: match.url, resolution: 'resolved-property', searchUrl, matchedCandidate: match.matchedCandidate, reason: match.reason }
-        : { resolution: 'fallback-suburb', searchUrl, reason: match.reason };
+      resolved.domain = await resolveSiteUrl(input, apiKey, 'domain');
     })(),
     (async () => {
       if (resolved.property.url) return;
-      const searchUrl = buildSearchUrl(input, 'property');
-      const match = extractMatchingUrl(await fetchScrapflyContent(searchUrl, apiKey), searchUrl, input, 'property');
-      resolved.property = match.url
-        ? { url: match.url, resolution: 'resolved-property', searchUrl, matchedCandidate: match.matchedCandidate, reason: match.reason }
-        : { resolution: 'fallback-suburb', searchUrl, reason: match.reason };
+      resolved.property = await resolveSiteUrl(input, apiKey, 'property');
     })()
   ]);
 
