@@ -20,9 +20,12 @@ function toConfidenceScore(value: EstimateApiResponse['confidence']) {
 
 export function EstimateSummaryCard({ result }: EstimateSummaryCardProps) {
   const lastYearValuation = result.input.lastYearValuation;
+  const principal = result.input.principal ?? 0;
   const currentValuation = result.result.currentValuation;
   const increaseAmount = currentValuation === null ? null : currentValuation - lastYearValuation;
+  const totalEquity = increaseAmount === null ? null : principal + increaseAmount;
   const isUp = increaseAmount !== null && increaseAmount > 0;
+  const isEquityUp = totalEquity !== null && totalEquity > 0;
 
   return (
     <Paper sx={{ p: 3.5, height: '100%', width: '100%' }}>
@@ -55,7 +58,7 @@ export function EstimateSummaryCard({ result }: EstimateSummaryCardProps) {
         </Stack>
 
         <Grid container spacing={2}>
-          <Grid size={{ xs: 12, sm: 6, xl: 4 }}>
+          <Grid size={{ xs: 12, sm: 6, xl: 3 }}>
             <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 4, height: '100%' }}>
               <Stack spacing={1}>
                 <Typography color="text.secondary">Last year&apos;s valuation</Typography>
@@ -63,7 +66,15 @@ export function EstimateSummaryCard({ result }: EstimateSummaryCardProps) {
               </Stack>
             </Paper>
           </Grid>
-          <Grid size={{ xs: 12, sm: 6, xl: 4 }}>
+          <Grid size={{ xs: 12, sm: 6, xl: 3 }}>
+            <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 4, height: '100%' }}>
+              <Stack spacing={1}>
+                <Typography color="text.secondary">Principal</Typography>
+                <Typography variant="h5">{formatCurrency(principal)}</Typography>
+              </Stack>
+            </Paper>
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6, xl: 3 }}>
             <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 4, height: '100%' }}>
               <Stack spacing={1}>
                 <Typography color="text.secondary">Property increase</Typography>
@@ -79,7 +90,23 @@ export function EstimateSummaryCard({ result }: EstimateSummaryCardProps) {
               </Stack>
             </Paper>
           </Grid>
-          <Grid size={{ xs: 12, sm: 12, xl: 4 }}>
+          <Grid size={{ xs: 12, sm: 6, xl: 3 }}>
+            <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 4, height: '100%' }}>
+              <Stack spacing={1}>
+                <Typography color="text.secondary">Total equity</Typography>
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <TrendingUpRoundedIcon color={isEquityUp ? 'success' : 'disabled'} />
+                  <Typography variant="h5" sx={{ color: isEquityUp ? 'success.main' : 'text.primary' }}>
+                    {totalEquity === null ? 'Unavailable' : formatCurrency(totalEquity)}
+                  </Typography>
+                </Stack>
+                <Typography variant="body2" color="text.secondary">
+                  Principal + property increase
+                </Typography>
+              </Stack>
+            </Paper>
+          </Grid>
+          <Grid size={{ xs: 12 }}>
             <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 4, height: '100%' }}>
               <Stack spacing={1}>
                 <Typography color="text.secondary">Sources used</Typography>

@@ -24,18 +24,19 @@ const API_BASE_URL = rawApiBaseUrl.replace(/\/$/, '');
 export default function App() {
   const [selectedProperty, setSelectedProperty] = useState<PropertyOption | null>(propertyOptions[0]);
   const [lastYearValuation, setLastYearValuation] = useState('1850000');
+  const [principal, setPrincipal] = useState('400000');
   const [showMap, setShowMap] = useState(false);
   const [result, setResult] = useState<EstimateApiResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const canGenerate = useMemo(() => {
-    return Boolean(selectedProperty && Number(lastYearValuation) > 0);
-  }, [selectedProperty, lastYearValuation]);
+    return Boolean(selectedProperty && Number(lastYearValuation) > 0 && Number(principal) >= 0);
+  }, [selectedProperty, lastYearValuation, principal]);
 
   async function handleGenerateEstimate() {
-    if (!selectedProperty || Number(lastYearValuation) <= 0) {
-      setError('Select a property and enter a valid valuation first.');
+    if (!selectedProperty || Number(lastYearValuation) <= 0 || Number(principal) < 0) {
+      setError('Select a property and enter a valid valuation and principal first.');
       return;
     }
 
@@ -55,6 +56,7 @@ export default function App() {
           postCode: selectedProperty.postcode,
           propertyType: selectedProperty.propertyType,
           lastYearValuation: Number(lastYearValuation),
+          principal: Number(principal),
           comparableType: 'sold',
           currency: 'AUD',
         }),
@@ -105,7 +107,9 @@ export default function App() {
                 <Box sx={{ gridRow: { xs: 'auto', lg: 'span 2' }, width: '100%' }}>
                   <ValuationForm
                     valuation={lastYearValuation}
-                    onChange={setLastYearValuation}
+                    principal={principal}
+                    onValuationChange={setLastYearValuation}
+                    onPrincipalChange={setPrincipal}
                     disabled={!canGenerate || loading}
                     onSubmit={handleGenerateEstimate}
                   />

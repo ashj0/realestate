@@ -3,12 +3,21 @@ import { Button, Paper, Stack, TextField, Typography } from '@mui/material';
 
 interface ValuationFormProps {
   valuation: string;
-  onChange: (value: string) => void;
+  principal: string;
+  onValuationChange: (value: string) => void;
+  onPrincipalChange: (value: string) => void;
   disabled?: boolean;
   onSubmit: () => void;
 }
 
-export function ValuationForm({ valuation, onChange, disabled, onSubmit }: ValuationFormProps) {
+export function ValuationForm({
+  valuation,
+  principal,
+  onValuationChange,
+  onPrincipalChange,
+  disabled,
+  onSubmit,
+}: ValuationFormProps) {
   return (
     <Paper sx={{ p: 3, height: '100%', display: 'flex', width: '100%', minWidth: 0 }}>
       <Stack spacing={2.5} sx={{ width: '100%', justifyContent: 'space-between' }}>
@@ -16,8 +25,16 @@ export function ValuationForm({ valuation, onChange, disabled, onSubmit }: Valua
         <TextField
           label="Last year's valuation"
           value={valuation}
-          onChange={(event) => onChange(event.target.value)}
+          onChange={(event) => onValuationChange(event.target.value)}
           placeholder="e.g. 1850000"
+          type="number"
+          fullWidth
+        />
+        <TextField
+          label="Principal"
+          value={principal}
+          onChange={(event) => onPrincipalChange(event.target.value)}
+          placeholder="e.g. 400000"
           type="number"
           fullWidth
         />

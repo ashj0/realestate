@@ -17,6 +17,7 @@ export interface EstimateApiResponse {
     address: string;
     propertyType: 'house' | 'unit';
     lastYearValuation: number;
+    principal?: number;
     comparableType: 'sold';
     currency: 'AUD';
   };
