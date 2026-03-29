@@ -79,16 +79,16 @@ export default function App() {
         minHeight: '100vh',
         background:
           'linear-gradient(180deg, rgba(29,53,87,0.10) 0%, rgba(245,241,234,1) 22%, rgba(245,241,234,1) 100%)',
-        py: 6,
+        py: 3,
       }}
     >
       <Container maxWidth="xl">
-        <Stack spacing={4}>
+        <Stack spacing={2.5}>
           <Header />
 
-          <Grid container spacing={3}>
+          <Grid container spacing={2}>
             <Grid size={{ xs: 12, lg: 8 }}>
-              <Stack spacing={3}>
+              <Stack spacing={2}>
                 <SearchPanel
                   options={propertyOptions}
                   selected={selectedProperty}
@@ -121,12 +121,16 @@ export default function App() {
           {error ? <Alert severity="error">{error}</Alert> : null}
 
           {result ? (
-            <Grid container spacing={3}>
-              <Grid size={{ xs: 12, lg: 5 }}>
+            <Grid container spacing={2}>
+              <Grid size={{ xs: 12, lg: 4 }}>
                 <EstimateSummaryCard result={result} />
               </Grid>
-              <Grid size={{ xs: 12, lg: 7 }}>
-                <SourceEstimateList siteEstimates={result.siteEstimates} selectedComparables={result.selectedComparables} />
+              <Grid size={{ xs: 12, lg: 8 }}>
+                <SourceEstimateList
+                  siteEstimates={result.siteEstimates}
+                  selectedComparables={result.selectedComparables}
+                  subjectAddress={selectedProperty?.address ?? result.input.address}
+                />
               </Grid>
             </Grid>
           ) : null}

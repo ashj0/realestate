@@ -6,8 +6,10 @@ import MapRoundedIcon from '@mui/icons-material/MapRounded';
 import {
   Autocomplete,
   Box,
+  Button,
   Chip,
   CircularProgress,
+  Collapse,
   Dialog,
   DialogContent,
   DialogTitle,
@@ -139,6 +141,7 @@ export function SearchPanel({ options, selected, onChange, mapOpen, onMapOpen, o
   const [searchText, setSearchText] = useState(selected?.address ?? '');
   const [autocompleteOptions, setAutocompleteOptions] = useState<PropertyAutocompleteOption[]>(selected ? [selected] : []);
   const [loading, setLoading] = useState(false);
+  const [expanded, setExpanded] = useState(!selected);
 
   useEffect(() => {
     setSearchText(selected?.address ?? '');
@@ -147,6 +150,9 @@ export function SearchPanel({ options, selected, onChange, mapOpen, onMapOpen, o
       const next = [selected, ...current.filter((option) => option.id !== selected.id)];
       return next.slice(0, 8);
     });
+    if (selected) {
+      setExpanded(false);
+    }
   }, [selected]);
 
   useEffect(() => {
@@ -186,85 +192,98 @@ export function SearchPanel({ options, selected, onChange, mapOpen, onMapOpen, o
 
   return (
     <>
-      <Paper sx={{ p: 3.5 }}>
-        <Stack spacing={3}>
+      <Paper sx={{ p: selected ? 2.25 : 3.5 }}>
+        <Stack spacing={selected ? 1.5 : 3}>
           <Stack direction="row" justifyContent="space-between" alignItems="center" gap={2}>
             <Box>
-              <Typography variant="h5" gutterBottom>
+              <Typography variant={selected ? 'h6' : 'h5'} gutterBottom={!selected}>
                 Search for a property
               </Typography>
-              <Typography color="text.secondary">
-                Type an address and pick from the live dropdown, or choose the property directly on the map.
+              <Typography color="text.secondary" variant="body2">
+                {selected
+                  ? `Selected: ${selected.address}`
+                  : 'Type an address and pick from the live dropdown, or choose the property directly on the map.'}
               </Typography>
             </Box>
-            <Chip icon={<MapRoundedIcon />} label="Map enabled" color="primary" variant="outlined" />
+            <Stack direction="row" spacing={1} alignItems="center">
+              <Chip icon={<MapRoundedIcon />} label="Map enabled" color="primary" variant="outlined" />
+              {selected ? (
+                <Button variant="text" size="small" onClick={() => setExpanded((current) => !current)}>
+                  {expanded ? 'Minimise' : 'Change property'}
+                </Button>
+              ) : null}
+            </Stack>
           </Stack>
 
-          <Autocomplete
-            filterOptions={(items) => items}
-            options={autocompleteOptions}
-            value={selected}
-            inputValue={searchText}
-            onInputChange={(_, value) => setSearchText(value)}
-            onChange={(_, value) => onChange(value)}
-            getOptionLabel={(option) => option.address}
-            isOptionEqualToValue={(option, value) => option.id === value.id}
-            noOptionsText={searchText.trim().length < 3 ? 'Type at least 3 characters' : 'No matching properties found'}
-            renderOption={(props, option) => (
-              <Box component="li" {...props}>
-                <Stack spacing={0.5} py={0.5}>
-                  <Typography fontWeight={700}>{option.address}</Typography>
-                  <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-                    <Chip size="small" label={`${option.suburb}, ${option.state} ${option.postcode}`} />
-                    <Chip size="small" variant="outlined" icon={<HomeWorkRoundedIcon />} label={option.propertyType} />
-                  </Stack>
-                </Stack>
-              </Box>
-            )}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                label="Property"
-                placeholder="Type an address"
-                InputProps={{
-                  ...params.InputProps,
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchRoundedIcon />
-                    </InputAdornment>
-                  ),
-                  endAdornment: (
-                    <>
-                      {loading ? <CircularProgress color="inherit" size={18} /> : null}
-                      {params.InputProps.endAdornment}
-                    </>
-                  ),
-                }}
+          <Collapse in={expanded || !selected}>
+            <Stack spacing={2.5}>
+              <Autocomplete
+                filterOptions={(items) => items}
+                options={autocompleteOptions}
+                value={selected}
+                inputValue={searchText}
+                onInputChange={(_, value) => setSearchText(value)}
+                onChange={(_, value) => onChange(value)}
+                getOptionLabel={(option) => option.address}
+                isOptionEqualToValue={(option, value) => option.id === value.id}
+                noOptionsText={searchText.trim().length < 3 ? 'Type at least 3 characters' : 'No matching properties found'}
+                renderOption={(props, option) => (
+                  <Box component="li" {...props}>
+                    <Stack spacing={0.5} py={0.5}>
+                      <Typography fontWeight={700}>{option.address}</Typography>
+                      <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+                        <Chip size="small" label={`${option.suburb}, ${option.state} ${option.postcode}`} />
+                        <Chip size="small" variant="outlined" icon={<HomeWorkRoundedIcon />} label={option.propertyType} />
+                      </Stack>
+                    </Stack>
+                  </Box>
+                )}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Property"
+                    placeholder="Type an address"
+                    InputProps={{
+                      ...params.InputProps,
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <SearchRoundedIcon />
+                        </InputAdornment>
+                      ),
+                      endAdornment: (
+                        <>
+                          {loading ? <CircularProgress color="inherit" size={18} /> : null}
+                          {params.InputProps.endAdornment}
+                        </>
+                      ),
+                    }}
+                  />
+                )}
               />
-            )}
-          />
 
-          <Paper
-            variant="outlined"
-            sx={{
-              p: 3,
-              borderStyle: 'dashed',
-              borderRadius: 4,
-              bgcolor: 'grey.50',
-              cursor: 'pointer',
-            }}
-            onClick={onMapOpen}
-          >
-            <Stack direction="row" spacing={2} alignItems="center">
-              <PlaceRoundedIcon color="primary" />
-              <Box>
-                <Typography fontWeight={700}>Open map picker</Typography>
-                <Typography color="text.secondary">
-                  Click here to choose one of the currently available properties from the visual map selector.
-                </Typography>
-              </Box>
+              <Paper
+                variant="outlined"
+                sx={{
+                  p: 2.25,
+                  borderStyle: 'dashed',
+                  borderRadius: 4,
+                  bgcolor: 'grey.50',
+                  cursor: 'pointer',
+                }}
+                onClick={onMapOpen}
+              >
+                <Stack direction="row" spacing={2} alignItems="center">
+                  <PlaceRoundedIcon color="primary" />
+                  <Box>
+                    <Typography fontWeight={700}>Open map picker</Typography>
+                    <Typography color="text.secondary" variant="body2">
+                      Click here to choose one of the currently available properties from the visual map selector.
+                    </Typography>
+                  </Box>
+                </Stack>
+              </Paper>
             </Stack>
-          </Paper>
+          </Collapse>
         </Stack>
       </Paper>
 

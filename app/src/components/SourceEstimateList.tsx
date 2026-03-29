@@ -21,6 +21,7 @@ import { formatCurrency, formatDisplayDate, formatPercent, parseLooseDate } from
 interface SourceEstimateListProps {
   siteEstimates: EstimateApiResponse['siteEstimates'];
   selectedComparables: EstimateApiResponse['selectedComparables'];
+  subjectAddress: string;
 }
 
 function estimateRows(siteEstimates: EstimateApiResponse['siteEstimates']) {
@@ -32,7 +33,7 @@ function estimateRows(siteEstimates: EstimateApiResponse['siteEstimates']) {
 }
 
 function allSoldHistory(siteEstimates: EstimateApiResponse['siteEstimates']) {
-  const deduped = new Map<string, { date: string | null; price: number | null; source: string | null; sourceUrl: string | null }>();
+  const deduped = new Map<string, { date: string | null; price: number | null; source: string | null; sourceUrl: string | null; address: string | null }>();
 
   for (const site of estimateRows(siteEstimates)) {
     for (const item of site.soldHistory) {
@@ -41,6 +42,7 @@ function allSoldHistory(siteEstimates: EstimateApiResponse['siteEstimates']) {
         price: item.price,
         source: item.source ?? site.label,
         sourceUrl: item.sourceUrl ?? site.sourceUrl,
+        address: null,
       };
 
       if (!(record.date || record.price || record.source)) continue;
@@ -115,7 +117,7 @@ function renderComparableRows(rows: ComparableRecord[]) {
   ));
 }
 
-export function SourceEstimateList({ siteEstimates, selectedComparables }: SourceEstimateListProps) {
+export function SourceEstimateList({ siteEstimates, selectedComparables, subjectAddress }: SourceEstimateListProps) {
   const rows = estimateRows(siteEstimates);
   const soldHistoryRows = allSoldHistory(siteEstimates);
 
@@ -171,7 +173,7 @@ export function SourceEstimateList({ siteEstimates, selectedComparables }: Sourc
         </Stack>
       </Paper>
 
-      <Grid container spacing={3}>
+      <Grid container spacing={2}>
         <Grid size={{ xs: 12, lg: 6 }}>
           <Paper sx={{ p: 3.5, height: '100%' }}>
             <Stack spacing={2}>
@@ -220,6 +222,7 @@ export function SourceEstimateList({ siteEstimates, selectedComparables }: Sourc
                   <TableHead>
                     <TableRow>
                       <TableCell>Date</TableCell>
+                      <TableCell>Name</TableCell>
                       <TableCell>Price</TableCell>
                       <TableCell>Source</TableCell>
                       <TableCell>Property</TableCell>
@@ -230,6 +233,7 @@ export function SourceEstimateList({ siteEstimates, selectedComparables }: Sourc
                       soldHistoryRows.map((row, index) => (
                         <TableRow key={`${row.source}-${row.date ?? index}`} hover>
                           <TableCell>{row.date ? formatDisplayDate(row.date) : '—'}</TableCell>
+                          <TableCell>{row.address ?? subjectAddress}</TableCell>
                           <TableCell>{row.price === null ? '—' : formatCurrency(row.price)}</TableCell>
                           <TableCell>{row.source ?? 'Unknown'}</TableCell>
                           <TableCell>
@@ -245,7 +249,7 @@ export function SourceEstimateList({ siteEstimates, selectedComparables }: Sourc
                       ))
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={4} sx={{ color: 'text.secondary' }}>
+                        <TableCell colSpan={5} sx={{ color: 'text.secondary' }}>
                           No sold history returned.
                         </TableCell>
                       </TableRow>
