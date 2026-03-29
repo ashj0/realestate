@@ -6,6 +6,7 @@ import { formatCurrency, formatPercent } from '../utils';
 
 interface EstimateSummaryCardProps {
   result: EstimateApiResponse;
+  principal: number;
 }
 
 function toConfidenceLabel(value: EstimateApiResponse['confidence']) {
@@ -18,9 +19,8 @@ function toConfidenceScore(value: EstimateApiResponse['confidence']) {
   return 40;
 }
 
-export function EstimateSummaryCard({ result }: EstimateSummaryCardProps) {
+export function EstimateSummaryCard({ result, principal }: EstimateSummaryCardProps) {
   const lastYearValuation = result.input.lastYearValuation;
-  const principal = result.input.principal ?? 0;
   const currentValuation = result.result.currentValuation;
   const increaseAmount = currentValuation === null ? null : currentValuation - lastYearValuation;
   const totalEquity = increaseAmount === null ? null : principal + increaseAmount;

@@ -140,7 +140,7 @@ export default function App() {
               }}
             >
               <Box sx={{ minWidth: 0 }}>
-                <EstimateSummaryCard result={result} />
+                <EstimateSummaryCard result={result} principal={Number(principal) || 0} />
               </Box>
               <Box sx={{ minWidth: 0, alignSelf: 'start' }}>
                 <SourceBreakdown siteEstimates={result.siteEstimates} />
