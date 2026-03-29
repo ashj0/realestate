@@ -22,19 +22,20 @@ const API_BASE_URL = rawApiBaseUrl.replace(/\/$/, '');
 export default function App() {
   const [selectedProperty, setSelectedProperty] = useState<PropertyOption | null>(propertyOptions[0]);
   const [lastYearValuation, setLastYearValuation] = useState('1850000');
-  const [principal, setPrincipal] = useState('400000');
+  const [loanBalance, setLoanBalance] = useState('400000');
+  const [sellingCostPercent, setSellingCostPercent] = useState('3');
   const [showMap, setShowMap] = useState(false);
   const [result, setResult] = useState<EstimateApiResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const canGenerate = useMemo(() => {
-    return Boolean(selectedProperty && Number(lastYearValuation) > 0 && Number(principal) >= 0);
-  }, [selectedProperty, lastYearValuation, principal]);
+    return Boolean(selectedProperty && Number(lastYearValuation) > 0 && Number(loanBalance) >= 0 && Number(sellingCostPercent) >= 0);
+  }, [selectedProperty, lastYearValuation, loanBalance, sellingCostPercent]);
 
   async function handleGenerateEstimate() {
-    if (!selectedProperty || Number(lastYearValuation) <= 0 || Number(principal) < 0) {
-      setError('Select a property and enter a valid valuation and principal first.');
+    if (!selectedProperty || Number(lastYearValuation) <= 0 || Number(loanBalance) < 0 || Number(sellingCostPercent) < 0) {
+      setError('Select a property and enter a valid valuation, loan balance, and selling costs first.');
       return;
     }
 
@@ -54,7 +55,7 @@ export default function App() {
           postCode: selectedProperty.postcode,
           propertyType: selectedProperty.propertyType,
           lastYearValuation: Number(lastYearValuation),
-          principal: Number(principal),
+          principal: Number(loanBalance),
           comparableType: 'sold',
           currency: 'AUD',
         }),
@@ -110,9 +111,11 @@ export default function App() {
             <Box sx={{ minWidth: 0, gridRow: { xs: 'auto', lg: 'span 2' } }}>
               <ValuationForm
                 valuation={lastYearValuation}
-                principal={principal}
+                loanBalance={loanBalance}
+                sellingCostPercent={sellingCostPercent}
                 onValuationChange={setLastYearValuation}
-                onPrincipalChange={setPrincipal}
+                onLoanBalanceChange={setLoanBalance}
+                onSellingCostPercentChange={setSellingCostPercent}
                 disabled={!canGenerate || loading}
                 onSubmit={handleGenerateEstimate}
               />
@@ -141,7 +144,11 @@ export default function App() {
                 }}
               >
                 <Box sx={{ minWidth: 0, display: 'flex' }}>
-                  <EstimateSummaryCard result={result} principal={Number(principal) || 0} />
+                  <EstimateSummaryCard
+                    result={result}
+                    loanBalance={Number(loanBalance) || 0}
+                    sellingCostPercent={Number(sellingCostPercent) || 0}
+                  />
                 </Box>
                 <Box sx={{ minWidth: 0, display: 'flex' }}>
                   <SourceBreakdown siteEstimates={result.siteEstimates} />

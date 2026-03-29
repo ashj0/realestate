@@ -4,18 +4,22 @@ import { formatNumberInput, parseNumberInput } from '../utils';
 
 interface ValuationFormProps {
   valuation: string;
-  principal: string;
+  loanBalance: string;
+  sellingCostPercent: string;
   onValuationChange: (value: string) => void;
-  onPrincipalChange: (value: string) => void;
+  onLoanBalanceChange: (value: string) => void;
+  onSellingCostPercentChange: (value: string) => void;
   disabled?: boolean;
   onSubmit: () => void;
 }
 
 export function ValuationForm({
   valuation,
-  principal,
+  loanBalance,
+  sellingCostPercent,
   onValuationChange,
-  onPrincipalChange,
+  onLoanBalanceChange,
+  onSellingCostPercentChange,
   disabled,
   onSubmit,
 }: ValuationFormProps) {
@@ -32,11 +36,19 @@ export function ValuationForm({
           fullWidth
         />
         <TextField
-          label="Loan principal"
-          value={formatNumberInput(principal)}
-          onChange={(event) => onPrincipalChange(parseNumberInput(event.target.value))}
+          label="Current loan balance"
+          value={formatNumberInput(loanBalance)}
+          onChange={(event) => onLoanBalanceChange(parseNumberInput(event.target.value))}
           placeholder="e.g. 400,000"
           inputMode="numeric"
+          fullWidth
+        />
+        <TextField
+          label="Selling costs (%)"
+          value={sellingCostPercent}
+          onChange={(event) => onSellingCostPercentChange(event.target.value.replace(/[^\d.]/g, ''))}
+          placeholder="e.g. 3"
+          inputMode="decimal"
           fullWidth
         />
         <Button

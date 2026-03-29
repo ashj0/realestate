@@ -6,7 +6,8 @@ import { formatCurrency, formatPercent } from '../utils';
 
 interface EstimateSummaryCardProps {
   result: EstimateApiResponse;
-  principal: number;
+  loanBalance: number;
+  sellingCostPercent: number;
 }
 
 function toConfidenceLabel(value: EstimateApiResponse['confidence']) {
@@ -19,13 +20,17 @@ function toConfidenceScore(value: EstimateApiResponse['confidence']) {
   return 40;
 }
 
-export function EstimateSummaryCard({ result, principal }: EstimateSummaryCardProps) {
+export function EstimateSummaryCard({ result, loanBalance, sellingCostPercent }: EstimateSummaryCardProps) {
   const lastYearValuation = result.input.lastYearValuation;
   const currentValuation = result.result.currentValuation;
   const increaseAmount = currentValuation === null ? null : currentValuation - lastYearValuation;
-  const totalEquity = increaseAmount === null ? null : principal + increaseAmount;
+  const totalEquity = currentValuation === null ? null : currentValuation - loanBalance;
+  const estimatedSellingCosts = currentValuation === null ? null : currentValuation * (sellingCostPercent / 100);
+  const netDeployableEquity =
+    currentValuation === null || estimatedSellingCosts === null ? null : currentValuation - loanBalance - estimatedSellingCosts;
   const isUp = increaseAmount !== null && increaseAmount > 0;
   const isEquityUp = totalEquity !== null && totalEquity > 0;
+  const isDeployableUp = netDeployableEquity !== null && netDeployableEquity > 0;
 
   return (
     <Paper sx={{ p: 3.5, height: '100%', width: '100%' }}>
@@ -58,7 +63,7 @@ export function EstimateSummaryCard({ result, principal }: EstimateSummaryCardPr
         </Stack>
 
         <Grid container spacing={2}>
-          <Grid size={{ xs: 12, sm: 6, xl: 3 }}>
+          <Grid size={{ xs: 12, sm: 6, xl: 4 }}>
             <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 4, height: '100%' }}>
               <Stack spacing={1}>
                 <Typography color="text.secondary">Last year&apos;s valuation</Typography>
@@ -66,15 +71,15 @@ export function EstimateSummaryCard({ result, principal }: EstimateSummaryCardPr
               </Stack>
             </Paper>
           </Grid>
-          <Grid size={{ xs: 12, sm: 6, xl: 3 }}>
+          <Grid size={{ xs: 12, sm: 6, xl: 4 }}>
             <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 4, height: '100%' }}>
               <Stack spacing={1}>
-                <Typography color="text.secondary">Loan principal</Typography>
-                <Typography variant="h5">{formatCurrency(principal)}</Typography>
+                <Typography color="text.secondary">Current loan balance</Typography>
+                <Typography variant="h5">{formatCurrency(loanBalance)}</Typography>
               </Stack>
             </Paper>
           </Grid>
-          <Grid size={{ xs: 12, sm: 6, xl: 3 }}>
+          <Grid size={{ xs: 12, sm: 6, xl: 4 }}>
             <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 4, height: '100%' }}>
               <Stack spacing={1}>
                 <Typography color="text.secondary">Property increase</Typography>
@@ -90,7 +95,7 @@ export function EstimateSummaryCard({ result, principal }: EstimateSummaryCardPr
               </Stack>
             </Paper>
           </Grid>
-          <Grid size={{ xs: 12, sm: 6, xl: 3 }}>
+          <Grid size={{ xs: 12, sm: 6, xl: 4 }}>
             <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 4, height: '100%' }}>
               <Stack spacing={1}>
                 <Typography color="text.secondary">Total equity</Typography>
@@ -101,7 +106,36 @@ export function EstimateSummaryCard({ result, principal }: EstimateSummaryCardPr
                   </Typography>
                 </Stack>
                 <Typography variant="body2" color="text.secondary">
-                  Principal + property increase
+                  Estimated current value - current loan balance
+                </Typography>
+              </Stack>
+            </Paper>
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6, xl: 4 }}>
+            <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 4, height: '100%' }}>
+              <Stack spacing={1}>
+                <Typography color="text.secondary">Estimated selling costs</Typography>
+                <Typography variant="h5">
+                  {estimatedSellingCosts === null ? 'Unavailable' : formatCurrency(estimatedSellingCosts)}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {sellingCostPercent.toFixed(1)}% of estimated current value
+                </Typography>
+              </Stack>
+            </Paper>
+          </Grid>
+          <Grid size={{ xs: 12, sm: 12, xl: 4 }}>
+            <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 4, height: '100%' }}>
+              <Stack spacing={1}>
+                <Typography color="text.secondary">Net deployable equity</Typography>
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <TrendingUpRoundedIcon color={isDeployableUp ? 'success' : 'disabled'} />
+                  <Typography variant="h5" sx={{ color: isDeployableUp ? 'success.main' : 'text.primary' }}>
+                    {netDeployableEquity === null ? 'Unavailable' : formatCurrency(netDeployableEquity)}
+                  </Typography>
+                </Stack>
+                <Typography variant="body2" color="text.secondary">
+                  Current value - loan balance - selling costs
                 </Typography>
               </Stack>
             </Paper>
