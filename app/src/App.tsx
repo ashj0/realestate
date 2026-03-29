@@ -88,8 +88,10 @@ export default function App() {
     const actualUpfrontCash = useDepositBond ? actualUpfrontCashPerProperty : depositAmount;
     const forecastCompletionValue = purchasePrice * Math.pow(1 + annualGrowthPercent / 100, yearsToCompletion);
     const forecastEquityGainPerProperty = forecastCompletionValue - purchasePrice;
+    const projectedEquityPerProperty = actualUpfrontCash + forecastEquityGainPerProperty;
     const totalUpfrontCashNeeded = actualUpfrontCash * propertyCount;
     const totalProjectedGain = forecastEquityGainPerProperty * propertyCount;
+    const totalProjectedOtpEquity = projectedEquityPerProperty * propertyCount;
     const fundingSurplusShortfall = netDeployableEquity === null ? null : netDeployableEquity - totalUpfrontCashNeeded;
 
     return {
@@ -102,6 +104,7 @@ export default function App() {
       yearsToCompletion,
       totalUpfrontCashNeeded,
       totalProjectedGain,
+      totalProjectedOtpEquity,
       fundingSurplusShortfall,
     };
   }, [
@@ -297,6 +300,7 @@ export default function App() {
                 usableEquityIfHeld={usableEquityIfHeld}
                 netDeployableEquity={netDeployableEquity}
                 totalProjectedGain={otpScenario.totalProjectedGain}
+                totalProjectedOtpEquity={otpScenario.totalProjectedOtpEquity}
                 totalUpfrontCashNeeded={otpScenario.totalUpfrontCashNeeded}
                 fundingSurplusShortfall={otpScenario.fundingSurplusShortfall}
                 principalInterestCost={otpScenario.principalInterestCost}

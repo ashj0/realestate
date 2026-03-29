@@ -80,14 +80,6 @@ export function EstimateSummaryCard({ result, loanBalance, sellingCostPercent, e
           <Grid size={{ xs: 12, sm: 6, xl: 4 }}>
             <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 4, height: '100%' }}>
               <Stack spacing={1}>
-                <Typography color="text.secondary">Current loan balance</Typography>
-                <Typography variant="h5">{formatCurrency(loanBalance)}</Typography>
-              </Stack>
-            </Paper>
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, xl: 4 }}>
-            <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 4, height: '100%' }}>
-              <Stack spacing={1}>
                 <Typography color="text.secondary">Property increase</Typography>
                 <Stack direction="row" spacing={1} alignItems="center">
                   <TrendingUpRoundedIcon color={isUp ? 'success' : 'disabled'} />
@@ -104,6 +96,15 @@ export function EstimateSummaryCard({ result, loanBalance, sellingCostPercent, e
           <Grid size={{ xs: 12, sm: 6, xl: 4 }}>
             <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 4, height: '100%' }}>
               <Stack spacing={1}>
+                <Typography color="text.secondary">Current loan balance</Typography>
+                <Typography variant="h5">{formatCurrency(loanBalance)}</Typography>
+              </Stack>
+            </Paper>
+          </Grid>
+
+          <Grid size={{ xs: 12, sm: 6, xl: 4 }}>
+            <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 4, height: '100%' }}>
+              <Stack spacing={1}>
                 <Typography color="text.secondary">Total equity</Typography>
                 <Stack direction="row" spacing={1} alignItems="center">
                   <TrendingUpRoundedIcon color={isEquityUp ? 'success' : 'disabled'} />
@@ -113,30 +114,6 @@ export function EstimateSummaryCard({ result, loanBalance, sellingCostPercent, e
                 </Stack>
                 <Typography variant="body2" color="text.secondary">
                   Estimated current value - current loan balance
-                </Typography>
-              </Stack>
-            </Paper>
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, xl: 4 }}>
-            <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 4, height: '100%' }}>
-              <Stack spacing={1}>
-                <Typography color="text.secondary">Estimated selling costs</Typography>
-                <Typography variant="h5">
-                  {estimatedSellingCosts === null ? 'Unavailable' : formatCurrency(estimatedSellingCosts)}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {sellingCostPercent.toFixed(1)}% of estimated current value
-                </Typography>
-              </Stack>
-            </Paper>
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, xl: 4 }}>
-            <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 4, height: '100%' }}>
-              <Stack spacing={1}>
-                <Typography color="text.secondary">Annual interest-only cost</Typography>
-                <Typography variant="h5">{formatCurrency(annualInterestOnlyCost)}</Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {existingLoanInterestRate.toFixed(1)}% of current loan balance
                 </Typography>
               </Stack>
             </Paper>
@@ -164,6 +141,31 @@ export function EstimateSummaryCard({ result, loanBalance, sellingCostPercent, e
                 </Stack>
                 <Typography variant="body2" color="text.secondary">
                   Current value - loan balance - selling costs
+                </Typography>
+              </Stack>
+            </Paper>
+          </Grid>
+
+          <Grid size={{ xs: 12, sm: 6, xl: 4 }}>
+            <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 4, height: '100%' }}>
+              <Stack spacing={1}>
+                <Typography color="text.secondary">Estimated selling costs</Typography>
+                <Typography variant="h5">
+                  {estimatedSellingCosts === null ? 'Unavailable' : formatCurrency(estimatedSellingCosts)}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {sellingCostPercent.toFixed(1)}% of estimated current value
+                </Typography>
+              </Stack>
+            </Paper>
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6, xl: 4 }}>
+            <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 4, height: '100%' }}>
+              <Stack spacing={1}>
+                <Typography color="text.secondary">Annual interest-only cost</Typography>
+                <Typography variant="h5">{formatCurrency(annualInterestOnlyCost)}</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {existingLoanInterestRate.toFixed(1)}% of current loan balance
                 </Typography>
               </Stack>
             </Paper>

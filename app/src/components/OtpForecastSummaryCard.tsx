@@ -27,8 +27,10 @@ export function OtpForecastSummaryCard({
   const actualUpfrontCash = useDepositBond ? actualUpfrontCashPerProperty : depositAmount;
   const forecastCompletionValue = purchasePrice * Math.pow(1 + annualGrowthPercent / 100, yearsToCompletion);
   const forecastEquityGainPerProperty = forecastCompletionValue - purchasePrice;
+  const projectedEquityPerProperty = actualUpfrontCash + forecastEquityGainPerProperty;
   const totalUpfrontCashNeeded = actualUpfrontCash * propertyCount;
   const totalProjectedGain = forecastEquityGainPerProperty * propertyCount;
+  const totalProjectedOtpEquity = projectedEquityPerProperty * propertyCount;
   const fundingSurplusShortfall = netDeployableEquity === null ? null : netDeployableEquity - totalUpfrontCashNeeded;
   const hasPositiveGain = totalProjectedGain > 0;
   const hasFundingCover = fundingSurplusShortfall !== null && fundingSurplusShortfall >= 0;
@@ -39,7 +41,7 @@ export function OtpForecastSummaryCard({
         <Stack spacing={1}>
           <Typography variant="h5">OTP forecast summary</Typography>
           <Typography color="text.secondary">
-            Estimate the completion value, expected gain, and whether current deployable equity can fund the upfront structure.
+            Estimate the completion value, expected gain, projected OTP equity position, and whether current deployable equity can fund the upfront structure.
           </Typography>
         </Stack>
 
@@ -74,11 +76,22 @@ export function OtpForecastSummaryCard({
           <Grid size={{ xs: 12, sm: 6, xl: 4 }}>
             <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 4, height: '100%' }}>
               <Stack spacing={1}>
-                <Typography color="text.secondary">Total projected gain</Typography>
+                <Typography color="text.secondary">Projected equity per property</Typography>
+                <Typography variant="h5">{formatCurrency(projectedEquityPerProperty)}</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Upfront cash committed + forecast gain
+                </Typography>
+              </Stack>
+            </Paper>
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6, xl: 4 }}>
+            <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 4, height: '100%' }}>
+              <Stack spacing={1}>
+                <Typography color="text.secondary">Total projected OTP equity</Typography>
                 <Stack direction="row" spacing={1} alignItems="center">
                   <TrendingUpRoundedIcon color={hasPositiveGain ? 'success' : 'disabled'} />
                   <Typography variant="h5" sx={{ color: hasPositiveGain ? 'success.main' : 'text.primary' }}>
-                    {formatCurrency(totalProjectedGain)}
+                    {formatCurrency(totalProjectedOtpEquity)}
                   </Typography>
                 </Stack>
                 <Typography variant="body2" color="text.secondary">
