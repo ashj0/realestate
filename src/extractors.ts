@@ -83,6 +83,25 @@ function soldHistoryToComparables(history: SoldHistoryRecord[], address: string,
   } as unknown as ComparableRecord));
 }
 
+function extractComparableRecords(items: Array<Record<string, unknown>>, address: string, sourceUrl: string | null): ComparableRecord[] {
+  return items
+    .map((item) => {
+      const path = firstString(item.pathV2);
+      const soldDateRaw = firstString(item.soldDate);
+      return {
+        address: firstString(item.address) ?? address,
+        saleDate: soldDateRaw ? soldDateRaw.slice(0, 10) : null,
+        salePrice: parseNumber(firstString((item.priceV2 as Record<string, unknown> | undefined)?.display)),
+        source: 'property.com.au' as SiteLabel,
+        sourceUrl: path
+          ? (path.startsWith('http') ? path : `https://www.property.com.au${path}`)
+          : sourceUrl
+      } satisfies ComparableRecord;
+    })
+    .filter((item) => item.address && !addressesMatch(item.address, address) && item.salePrice !== null)
+    .slice(0, 6);
+}
+
 function rollingTwelveMonthPeriod(): string {
   return '12 months';
 }
@@ -470,11 +489,12 @@ export function extractProperty(content: string, sourceUrl: string | null, addre
   const marketTrends = embedded?.marketTrends as Record<string, unknown> | undefined;
   const otherSimilarSoldProperties = marketTrends?.otherSimilarSoldProperties as Record<string, unknown> | undefined;
   const comparableSoldProperties = marketTrends?.comparableSoldProperties as Record<string, unknown> | undefined;
-  const comparableList = Array.isArray(comparableSoldProperties?.properties)
+  const comparableSoldList = Array.isArray(comparableSoldProperties?.properties)
     ? comparableSoldProperties.properties as Array<Record<string, unknown>>
-    : Array.isArray(otherSimilarSoldProperties?.properties)
-      ? otherSimilarSoldProperties.properties as Array<Record<string, unknown>>
-      : [];
+    : [];
+  const otherSimilarSoldList = Array.isArray(otherSimilarSoldProperties?.properties)
+    ? otherSimilarSoldProperties.properties as Array<Record<string, unknown>>
+    : [];
 
   const growthTexts = textsFromSelector($, ['[class*="CostChange__TrendIndicator"]', '[class^="MedianCostBrick__TrendIndicator"]']);
   const medianText = textFromSelector($, ['[class^="MedianCostBrick__CostValue"]']);
@@ -486,28 +506,18 @@ export function extractProperty(content: string, sourceUrl: string | null, addre
   estimate.propertyTypeMatched = containsUnitContext(bodyText) || /\/unit-/i.test(bodyText);
   estimate.soldHistory = extractSoldHistoryFromText(bodyText, 'property.com.au', sourceUrl);
 
-  estimate.comparables = comparableList
-    .map((item) => {
-      const path = firstString(item.pathV2);
-      const soldDateRaw = firstString(item.soldDate);
-      return {
-        address: firstString(item.address) ?? address,
-        saleDate: soldDateRaw ? soldDateRaw.slice(0, 10) : null,
-        salePrice: parseNumber(firstString((item.priceV2 as Record<string, unknown> | undefined)?.display)),
-        source: 'property.com.au' as SiteLabel,
-        sourceUrl: path
-          ? (path.startsWith('http') ? path : `https://www.property.com.au${path}`)
-          : sourceUrl
-      } satisfies ComparableRecord;
-    })
-    .filter((item) => item.address && !addressesMatch(item.address, address) && item.salePrice !== null)
-    .slice(0, 6);
+  const directComparables = extractComparableRecords(comparableSoldList, address, sourceUrl);
+  const fallbackComparables = extractComparableRecords(otherSimilarSoldList, address, sourceUrl);
+  estimate.comparables = directComparables.length ? directComparables : fallbackComparables;
 
-  if (!estimate.comparables.length) {
-    estimate.comparables = soldHistoryToComparables(estimate.soldHistory, address, 'property.com.au', sourceUrl);
-    estimate.notes.push('Fell back to text-derived comparables; no structured market-trends comparables found');
+  if (directComparables.length) {
+    estimate.notes.push(`Parsed ${directComparables.length} comparables from property.com.au comparableSoldProperties`);
+  } else if (fallbackComparables.length) {
+    estimate.notes.push(`Parsed ${fallbackComparables.length} comparables from property.com.au otherSimilarSoldProperties`);
+  } else if (comparableSoldList.length || otherSimilarSoldList.length) {
+    estimate.notes.push('Structured property.com.au market-trends entries were present but matched the subject property or lacked sale prices');
   } else {
-    estimate.notes.push(`Parsed ${estimate.comparables.length} comparables from property.com.au market-trends`);
+    estimate.notes.push('No structured property.com.au market-trends comparables found');
   }
 
   if (estimate.medianPrice !== null) {
