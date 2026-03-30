@@ -102,6 +102,19 @@ function extractComparableRecords(items: Array<Record<string, unknown>>, address
     .slice(0, 6);
 }
 
+function extractNeighbouringPropertyRecords(items: Array<Record<string, unknown>>, address: string): ComparableRecord[] {
+  return items
+    .map((item) => ({
+      address: firstString(item.fullAddress) ?? firstString(item.shortAddress) ?? address,
+      saleDate: null,
+      salePrice: null,
+      source: 'property.com.au' as SiteLabel,
+      sourceUrl: firstString(item.propertyPageLink)
+    } satisfies ComparableRecord))
+    .filter((item) => item.address && !addressesMatch(item.address, address))
+    .slice(0, 6);
+}
+
 function rollingTwelveMonthPeriod(): string {
   return '12 months';
 }
@@ -495,6 +508,7 @@ export function extractProperty(content: string, sourceUrl: string | null, addre
   const otherSimilarSoldList = Array.isArray(otherSimilarSoldProperties?.properties)
     ? otherSimilarSoldProperties.properties as Array<Record<string, unknown>>
     : [];
+  const argonautData = parseRealestateArgonaut(content, address);
 
   const growthTexts = textsFromSelector($, ['[class*="CostChange__TrendIndicator"]', '[class^="MedianCostBrick__TrendIndicator"]']);
   const medianText = textFromSelector($, ['[class^="MedianCostBrick__CostValue"]']);
@@ -508,12 +522,22 @@ export function extractProperty(content: string, sourceUrl: string | null, addre
 
   const directComparables = extractComparableRecords(comparableSoldList, address, sourceUrl);
   const fallbackComparables = extractComparableRecords(otherSimilarSoldList, address, sourceUrl);
-  estimate.comparables = directComparables.length ? directComparables : fallbackComparables;
+  const neighbouringComparables = extractNeighbouringPropertyRecords((argonautData?.comparables ?? []).map((item) => ({
+    fullAddress: item.address,
+    propertyPageLink: item.sourceUrl
+  })), address);
+  estimate.comparables = directComparables.length
+    ? directComparables
+    : fallbackComparables.length
+      ? fallbackComparables
+      : neighbouringComparables;
 
   if (directComparables.length) {
     estimate.notes.push(`Parsed ${directComparables.length} comparables from property.com.au comparableSoldProperties`);
   } else if (fallbackComparables.length) {
     estimate.notes.push(`Parsed ${fallbackComparables.length} comparables from property.com.au otherSimilarSoldProperties`);
+  } else if (neighbouringComparables.length) {
+    estimate.notes.push(`Fell back to ${neighbouringComparables.length} neighbouring properties from property.com.au page context (no sold prices available)`);
   } else if (comparableSoldList.length || otherSimilarSoldList.length) {
     estimate.notes.push('Structured property.com.au market-trends entries were present but matched the subject property or lacked sale prices');
   } else {
