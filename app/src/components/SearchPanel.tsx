@@ -444,7 +444,19 @@ export function SearchPanel({ options, selected, onChange, onManualSubmit, mapOp
             <TextField
               label="Street address"
               value={manualAddress}
-              onChange={(event) => setManualAddress(event.target.value)}
+              onChange={(event) => {
+                const nextValue = event.target.value;
+                setManualAddress(nextValue);
+
+                const parsedUrl = parseRealestatePropertyUrl(nextValue);
+                if (parsedUrl) {
+                  setManualAddress(parsedUrl.address);
+                  setManualSuburb(parsedUrl.suburb);
+                  setManualState(parsedUrl.state);
+                  setManualPostcode(parsedUrl.postcode);
+                  setManualPropertyType(parsedUrl.propertyType);
+                }
+              }}
               fullWidth
             />
             <TextField
