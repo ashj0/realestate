@@ -203,6 +203,10 @@ function parseRealestateArgonaut(content: string, targetAddress: string): {
   propertyComUrl: string | null;
   soldHistory: SoldHistoryRecord[];
   comparables: ComparableRecord[];
+  suburbGrowthPercent: number | null;
+  medianPrice: number | null;
+  medianPricePeriod: string | null;
+  estimateUpdatedAt: string | null;
   notes: string[];
 } | null {
   const script = findArgonautScript(content);
@@ -210,86 +214,88 @@ function parseRealestateArgonaut(content: string, targetAddress: string): {
 
   try {
     const exchange = JSON.parse(script) as Record<string, unknown>;
-    const nestedObjects = collectNestedObjects(exchange);
-    const notes: string[] = ['Parsed ArgonautExchange structured data'];
+    const profileDataRaw = typeof exchange['resi-property_property-profile'] === 'object' && exchange['resi-property_property-profile']
+      ? (exchange['resi-property_property-profile'] as Record<string, unknown>).property_detail_data
+      : null;
+    const profileData = typeof profileDataRaw === 'string' ? JSON.parse(profileDataRaw) as Record<string, unknown> : null;
+    const propertyProfile = profileData?.propertyProfile as Record<string, unknown> | undefined;
+    const property = propertyProfile?.property as Record<string, unknown> | undefined;
+    const propertyAttributes = property?.attributes as Record<string, unknown> | undefined;
+    const valuations = property?.valuations as Record<string, unknown> | undefined;
+    const saleValuation = valuations?.sale as Record<string, unknown> | undefined;
+    const medianValuation = saleValuation?.medianValuation as Record<string, unknown> | undefined;
+    const pca = propertyProfile?.pca as Record<string, unknown> | undefined;
+    const pcaPropertyLink = pca?.pcaPropertyLink as Record<string, unknown> | undefined;
+    const marketMetrics = propertyProfile?.marketMetrics as Record<string, unknown> | undefined;
+    const medianPriceRoot = marketMetrics?.medianPrice as Record<string, unknown> | undefined;
+    const buyMetrics = medianPriceRoot?.buy as Record<string, unknown> | undefined;
 
-    let propertyType: string | null = null;
-    let heroImageUrl: string | null = null;
-    let propertyComUrl: string | null = null;
+    const notes: string[] = ['Parsed ArgonautExchange structured data'];
     const soldHistory: SoldHistoryRecord[] = [];
     const comparables: ComparableRecord[] = [];
-    const seenHistory = new Set<string>();
-    const seenComparables = new Set<string>();
 
-    for (const node of nestedObjects) {
-      if (!propertyType && 'propertyType' in node) {
-        const candidate = firstString((node as Record<string, unknown>).propertyType);
-        if (candidate) propertyType = candidate;
-      }
-      if (!heroImageUrl) {
-        const imageCandidate = firstString((node as Record<string, unknown>).heroImageUrl)
-          ?? firstString((node as Record<string, unknown>).mainImage)
-          ?? firstString((node as Record<string, unknown>).image)
-          ?? firstString((node as Record<string, unknown>).images);
-        if (imageCandidate && /^https?:\/\//i.test(imageCandidate) && /\.(jpg|jpeg|png|webp)/i.test(imageCandidate)) {
-          heroImageUrl = imageCandidate.replace('{width}', '800').replace('{height}', '600');
-        }
-      }
-      if (!propertyComUrl) {
-        const hrefCandidate = firstString((node as Record<string, unknown>).href)
-          ?? firstString((node as Record<string, unknown>).url)
-          ?? firstString((node as Record<string, unknown>).link);
-        if (hrefCandidate && /property\.com\.au/i.test(hrefCandidate)) {
-          propertyComUrl = hrefCandidate.replace(/\\u002F/g, '/');
-        }
-      }
+    const propertyType = firstString(propertyAttributes?.propertyType) ?? null;
+    const heroImageCandidate = firstString((property?.propertyMedia as Record<string, unknown> | undefined)?.mainImage)
+      ?? firstString((property?.propertyMedia as Record<string, unknown> | undefined)?.images);
+    const heroImageUrl = heroImageCandidate && /^https?:\/\//i.test(heroImageCandidate)
+      ? heroImageCandidate.replace('{width}', '800').replace('{height}', '600')
+      : null;
+    const propertyComUrl = firstString(pcaPropertyLink?.href) ?? null;
 
-      const addressCandidates = Array.from(collectAddressLikeStrings(node));
-      const matchingAddress = addressCandidates.find((candidate) => addressesMatch(candidate, targetAddress)) ?? null;
-      const nonTargetAddress = addressCandidates.find((candidate) => !addressesMatch(candidate, targetAddress)) ?? null;
-
-      const keys = Object.keys(node);
-      const dateKey = keys.find((key) => /date/i.test(key));
-      const priceKey = keys.find((key) => /price/i.test(key));
-
-      if (dateKey && priceKey) {
-        const date = firstString(node[dateKey]);
-        const price = parseNumber(firstString(node[priceKey]));
-
-        if (matchingAddress && (date || price !== null)) {
-          const key = `${matchingAddress}|${date ?? ''}|${price ?? ''}`;
-          if (!seenHistory.has(key)) {
-            seenHistory.add(key);
-            soldHistory.push({
-              date,
-              price,
-              source: 'realestate.com.au',
-              sourceUrl: null
-            });
-          }
-        }
-
-        if (nonTargetAddress && price !== null) {
-          const key = `${nonTargetAddress}|${date ?? ''}|${price}`;
-          if (!seenComparables.has(key)) {
-            seenComparables.add(key);
-            comparables.push({
-              address: nonTargetAddress,
-              saleDate: date,
-              salePrice: price,
-              source: 'realestate.com.au',
-              sourceUrl: null
-            });
-          }
-        }
-      }
+    const timeline = Array.isArray(property?.propertyTimeline) ? property.propertyTimeline as Array<Record<string, unknown>> : [];
+    for (const event of timeline) {
+      const eventType = firstString(event.eventType)?.toLowerCase() ?? null;
+      if (eventType !== 'sold') continue;
+      soldHistory.push({
+        date: firstString(event.date),
+        price: parseNumber(firstString(event.price)),
+        source: 'realestate.com.au',
+        sourceUrl: null
+      });
     }
+
+    const neighbouringProperties = Array.isArray((propertyProfile?.streetDetails as Record<string, unknown> | undefined)?.neighbouringProperties)
+      ? ((propertyProfile?.streetDetails as Record<string, unknown> | undefined)?.neighbouringProperties as Array<Record<string, unknown>>)
+      : [];
+    for (const neighbour of neighbouringProperties) {
+      const address = firstString(neighbour.fullAddress) ?? firstString(neighbour.shortAddress);
+      if (!address || addressesMatch(address, targetAddress)) continue;
+      comparables.push({
+        address,
+        saleDate: null,
+        salePrice: null,
+        source: 'realestate.com.au',
+        sourceUrl: firstString(neighbour.propertyPageLink)
+      });
+      if (comparables.length >= 3) break;
+    }
+
+    const propertyTypeKey = propertyType?.toLowerCase() === 'unit' || propertyType?.toLowerCase() === 'apartment' ? 'unit' : 'house';
+    const bedroomsValue = Number((propertyAttributes?.bedrooms as Record<string, unknown> | undefined)?.value);
+    const bedroomBucket = Number.isFinite(bedroomsValue)
+      ? propertyTypeKey === 'unit'
+        ? (bedroomsValue >= 4 ? 'fourPlusBed' : bedroomsValue === 3 ? 'threeBed' : bedroomsValue === 2 ? 'twoBed' : bedroomsValue === 1 ? 'oneBed' : 'allBed')
+        : (bedroomsValue >= 5 ? 'fivePlusBed' : bedroomsValue === 4 ? 'fourBed' : bedroomsValue === 3 ? 'threeBed' : bedroomsValue === 2 ? 'twoBed' : bedroomsValue === 1 ? 'oneBed' : 'allBed')
+      : 'allBed';
+
+    const typedMetrics = (buyMetrics?.[propertyTypeKey] as Record<string, unknown> | undefined);
+    const bedroomMetrics = (typedMetrics?.[bedroomBucket] as Record<string, unknown> | undefined) ?? (typedMetrics?.allBed as Record<string, unknown> | undefined);
+    const yearlyMetrics = (bedroomMetrics?.yearly as Record<string, unknown> | undefined) ?? (typedMetrics?.allBed as Record<string, unknown> | undefined)?.yearly as Record<string, unknown> | undefined;
+
+    const suburbGrowthPercent = typeof (yearlyMetrics?.changePercentage as Record<string, unknown> | undefined)?.value === 'number'
+      ? ((yearlyMetrics?.changePercentage as Record<string, unknown>).value as number)
+      : parsePercent(firstString((yearlyMetrics?.changePercentage as Record<string, unknown> | undefined)?.display));
+    const medianPrice = parseNumber(firstString(yearlyMetrics?.display));
+    const estimateUpdatedAt = firstString(medianValuation?.lastUpdated) ?? null;
 
     if (!soldHistory.length) {
-      notes.push('No address-linked sold history found in Argonaut data');
+      notes.push('No sold history found in property timeline');
     }
     if (!comparables.length) {
-      notes.push('No address-linked comparables found in Argonaut data');
+      notes.push('No neighbouring property comparables found in Argonaut data');
+    }
+    if (!heroImageUrl) {
+      notes.push('No hero image found in property media');
     }
 
     return {
@@ -298,6 +304,10 @@ function parseRealestateArgonaut(content: string, targetAddress: string): {
       propertyComUrl,
       soldHistory,
       comparables,
+      suburbGrowthPercent,
+      medianPrice,
+      medianPricePeriod: yearlyMetrics ? rollingTwelveMonthPeriod() : null,
+      estimateUpdatedAt,
       notes
     };
   } catch {
@@ -306,7 +316,11 @@ function parseRealestateArgonaut(content: string, targetAddress: string): {
 }
 
 export function extractRealestatePropertyComUrl(content: string, address: string): string | null {
-  return parseRealestateArgonaut(content, address)?.propertyComUrl ?? null;
+  const argonautUrl = parseRealestateArgonaut(content, address)?.propertyComUrl ?? null;
+  if (argonautUrl) return argonautUrl;
+
+  const $ = load(content);
+  return attrFromSelector($, ['a[href*="property.com.au"]'], 'href');
 }
 
 export function extractRealestate(content: string, sourceUrl: string | null, address: string): SiteEstimate {
@@ -322,12 +336,12 @@ export function extractRealestate(content: string, sourceUrl: string | null, add
   const medianText = textFromSelector($, ['[data-testid="median-price-display"]']);
   const updatedText = bodyText.match(/(?:Updated|Last updated)[:\s-]+([A-Z][a-z]{2,8}\s+\d{4})/i)?.[1] ?? null;
 
-  estimate.suburbGrowthPercent = parsePercent(growthAttr ?? growthText);
-  estimate.medianPrice = parseNumber(medianText);
-  estimate.medianPricePeriod = rollingTwelveMonthPeriod();
-  estimate.estimateUpdatedAt = updatedText ? normalizeWhitespace(updatedText) : null;
+  estimate.suburbGrowthPercent = argonaut?.suburbGrowthPercent ?? parsePercent(growthAttr ?? growthText);
+  estimate.medianPrice = argonaut?.medianPrice ?? parseNumber(medianText);
+  estimate.medianPricePeriod = argonaut?.medianPricePeriod ?? rollingTwelveMonthPeriod();
+  estimate.estimateUpdatedAt = argonaut?.estimateUpdatedAt ?? (updatedText ? normalizeWhitespace(updatedText) : null);
 
-  estimate.heroImageUrl = argonaut?.heroImageUrl ?? null;
+  estimate.heroImageUrl = argonaut?.heroImageUrl ?? attrFromSelector($, ['meta[property="og:image"]', 'meta[name="thumbnail"]'], 'content') ?? null;
   const argonautPropertyType = argonaut?.propertyType?.toLowerCase() ?? null;
   estimate.propertyTypeMatched =
     argonautPropertyType === 'unit' ||
