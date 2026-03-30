@@ -23,7 +23,7 @@ const rawApiBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim() ?? '';
 const API_BASE_URL = rawApiBaseUrl.replace(/\/$/, '');
 
 export default function App() {
-  const [selectedProperty, setSelectedProperty] = useState<PropertyOption | null>(propertyOptions[0]);
+  const [selectedProperty, setSelectedProperty] = useState<PropertyOption | null>(null);
   const [lastYearValuation, setLastYearValuation] = useState('1850000');
   const [loanBalance, setLoanBalance] = useState('400000');
   const [sellingCostPercent, setSellingCostPercent] = useState('3');
