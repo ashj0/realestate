@@ -269,15 +269,19 @@ export function SearchPanel({ options, selected, onChange, onManualSubmit, mapOp
     return Array.from(lookup.values());
   }, [options, autocompleteOptions]);
 
-  const suburbHint = suburbPostcodeHints[manualSuburb.trim().toLowerCase()];
-  const postcodeLooksValid = manualPostcode.trim().length === 4;
+  const parsedManualUrl = parseRealestatePropertyUrl(manualAddress.trim());
+  const resolvedManualSuburb = (parsedManualUrl?.suburb ?? manualSuburb).trim();
+  const resolvedManualState = (parsedManualUrl?.state ?? manualState).trim();
+  const resolvedManualPostcode = (parsedManualUrl?.postcode ?? manualPostcode).trim();
+  const suburbHint = suburbPostcodeHints[resolvedManualSuburb.toLowerCase()];
+  const postcodeLooksValid = resolvedManualPostcode.length === 4;
   const postcodeMismatch = Boolean(
-    suburbHint && postcodeLooksValid && (suburbHint.state !== manualState || suburbHint.postcode !== manualPostcode.trim())
+    suburbHint && postcodeLooksValid && (suburbHint.state !== resolvedManualState || suburbHint.postcode !== resolvedManualPostcode)
   );
   const canUseManualProperty =
     manualAddress.trim().length > 0 &&
-    manualSuburb.trim().length > 0 &&
-    manualPostcode.trim().length === 4 &&
+    resolvedManualSuburb.length > 0 &&
+    resolvedManualPostcode.length === 4 &&
     !postcodeMismatch;
 
   function openManualDialog() {
@@ -496,7 +500,7 @@ export function SearchPanel({ options, selected, onChange, onManualSubmit, mapOp
                 error={postcodeMismatch}
                 helperText={
                   postcodeMismatch && suburbHint
-                    ? `${manualSuburb.trim()} is usually ${suburbHint.state} ${suburbHint.postcode}`
+                    ? `${resolvedManualSuburb} is usually ${suburbHint.state} ${suburbHint.postcode}`
                     : ' '
                 }
               />
