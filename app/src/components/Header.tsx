@@ -1,8 +1,15 @@
 import { Box, Chip, Stack, Typography } from '@mui/material';
+import insynergyLogo from '../assets/insynergy-logo.png';
 
 export function Header() {
   return (
     <Stack spacing={2}>
+      <Box
+        component="img"
+        src={insynergyLogo}
+        alt="inSynergy logo"
+        sx={{ height: { xs: 48, md: 60 }, width: 'auto', alignSelf: 'flex-start' }}
+      />
       <Chip
         label="inSynergy property strategy workspace"
         color="secondary"
