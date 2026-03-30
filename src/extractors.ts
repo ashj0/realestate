@@ -147,9 +147,59 @@ function firstString(value: unknown, seen = new Set<unknown>()): string | null {
   return null;
 }
 
-function parseRealestateArgonaut(content: string): {
+function collectAddressLikeStrings(value: unknown, output = new Set<string>()): Set<string> {
+  if (value == null) return output;
+
+  if (typeof value === 'string') {
+    const normalized = normalizeWhitespace(value);
+    if (/\b(?:street|st|road|rd|avenue|ave|drive|dr|parade|pde|place|pl|court|ct|crescent|cres|lane|ln|terrace|tce|way|close|cct|boulevard|blvd)\b/i.test(normalized)) {
+      output.add(normalized);
+    }
+    return output;
+  }
+
+  if (Array.isArray(value)) {
+    for (const item of value) collectAddressLikeStrings(item, output);
+    return output;
+  }
+
+  if (typeof value === 'object') {
+    for (const nested of Object.values(value as Record<string, unknown>)) {
+      collectAddressLikeStrings(nested, output);
+    }
+  }
+
+  return output;
+}
+
+function normalizeAddressForComparison(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\b(street)\b/g, 'st')
+    .replace(/\b(road)\b/g, 'rd')
+    .replace(/\b(parade)\b/g, 'pde')
+    .replace(/\b(avenue)\b/g, 'ave')
+    .replace(/\b(drive)\b/g, 'dr')
+    .replace(/\b(place)\b/g, 'pl')
+    .replace(/\b(court)\b/g, 'ct')
+    .replace(/\b(terrace)\b/g, 'tce')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function addressesMatch(candidate: string, target: string): boolean {
+  const candidateNorm = normalizeAddressForComparison(candidate);
+  const targetNorm = normalizeAddressForComparison(target);
+
+  if (!candidateNorm || !targetNorm) return false;
+  return candidateNorm.includes(targetNorm) || targetNorm.includes(candidateNorm);
+}
+
+function parseRealestateArgonaut(content: string, targetAddress: string): {
   propertyType: string | null;
   soldHistory: SoldHistoryRecord[];
+  comparables: ComparableRecord[];
   notes: string[];
 } | null {
   const script = findArgonautScript(content);
@@ -162,12 +212,19 @@ function parseRealestateArgonaut(content: string): {
 
     let propertyType: string | null = null;
     const soldHistory: SoldHistoryRecord[] = [];
+    const comparables: ComparableRecord[] = [];
+    const seenHistory = new Set<string>();
+    const seenComparables = new Set<string>();
 
     for (const node of nestedObjects) {
       if (!propertyType && 'propertyType' in node) {
         const candidate = firstString((node as Record<string, unknown>).propertyType);
         if (candidate) propertyType = candidate;
       }
+
+      const addressCandidates = Array.from(collectAddressLikeStrings(node));
+      const matchingAddress = addressCandidates.find((candidate) => addressesMatch(candidate, targetAddress)) ?? null;
+      const nonTargetAddress = addressCandidates.find((candidate) => !addressesMatch(candidate, targetAddress)) ?? null;
 
       const keys = Object.keys(node);
       const dateKey = keys.find((key) => /date/i.test(key));
@@ -176,20 +233,47 @@ function parseRealestateArgonaut(content: string): {
       if (dateKey && priceKey) {
         const date = firstString(node[dateKey]);
         const price = parseNumber(firstString(node[priceKey]));
-        if (date || price !== null) {
-          soldHistory.push({
-            date,
-            price,
-            source: 'realestate.com.au',
-            sourceUrl: null
-          });
+
+        if (matchingAddress && (date || price !== null)) {
+          const key = `${matchingAddress}|${date ?? ''}|${price ?? ''}`;
+          if (!seenHistory.has(key)) {
+            seenHistory.add(key);
+            soldHistory.push({
+              date,
+              price,
+              source: 'realestate.com.au',
+              sourceUrl: null
+            });
+          }
+        }
+
+        if (nonTargetAddress && price !== null) {
+          const key = `${nonTargetAddress}|${date ?? ''}|${price}`;
+          if (!seenComparables.has(key)) {
+            seenComparables.add(key);
+            comparables.push({
+              address: nonTargetAddress,
+              saleDate: date,
+              salePrice: price,
+              source: 'realestate.com.au',
+              sourceUrl: null
+            });
+          }
         }
       }
+    }
+
+    if (!soldHistory.length) {
+      notes.push('No address-linked sold history found in Argonaut data');
+    }
+    if (!comparables.length) {
+      notes.push('No address-linked comparables found in Argonaut data');
     }
 
     return {
       propertyType,
       soldHistory,
+      comparables,
       notes
     };
   } catch {
@@ -203,7 +287,7 @@ export function extractRealestate(content: string, sourceUrl: string | null, add
 
   const $ = load(content);
   const bodyText = normalizeWhitespace($.root().text());
-  const argonaut = parseRealestateArgonaut(content);
+  const argonaut = parseRealestateArgonaut(content, address);
 
   const growthAttr = attrFromSelector($, ['[data-testid="growth-percentage"]'], 'growth');
   const growthText = textFromSelector($, ['[data-testid="growth-percentage"]', '[class*="MedianPriceGrowth__GrowthValue"]']);
@@ -224,8 +308,10 @@ export function extractRealestate(content: string, sourceUrl: string | null, add
 
   estimate.soldHistory = argonaut?.soldHistory?.length
     ? argonaut.soldHistory.slice(0, 10).map((item) => ({ ...item, sourceUrl }))
-    : extractSoldHistoryFromText(bodyText, 'realestate.com.au', sourceUrl);
-  estimate.comparables = soldHistoryToComparables(estimate.soldHistory, address, 'realestate.com.au', sourceUrl);
+    : [];
+  estimate.comparables = argonaut?.comparables?.length
+    ? argonaut.comparables.slice(0, 3).map((item) => ({ ...item, sourceUrl }))
+    : [];
 
   if (estimate.medianPrice !== null) {
     estimate.notes.push(`Unit median: $${estimate.medianPrice.toLocaleString('en-AU')}`);
