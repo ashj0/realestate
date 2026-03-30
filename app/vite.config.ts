@@ -1,6 +1,8 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
+const apiTarget = 'http://localhost:3001';
+
 export default defineConfig({
   plugins: [react()],
   server: {
@@ -9,23 +11,23 @@ export default defineConfig({
     allowedHosts: ['nemoclawvm.tail5df9d8.ts.net'],
     proxy: {
       '/estimate': {
-        target: 'http://localhost:3000',
+        target: apiTarget,
         changeOrigin: true,
       },
       '/api/estimate': {
-        target: 'http://localhost:3000',
+        target: apiTarget,
         changeOrigin: true,
       },
       '/property-autocomplete': {
-        target: 'http://localhost:3000',
+        target: apiTarget,
         changeOrigin: true,
       },
       '/api/property-autocomplete': {
-        target: 'http://localhost:3000',
+        target: apiTarget,
         changeOrigin: true,
       },
       '/health': {
-        target: 'http://localhost:3000',
+        target: apiTarget,
         changeOrigin: true,
       },
     },

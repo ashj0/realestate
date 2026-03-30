@@ -62,7 +62,7 @@ app.get('/api/property-autocomplete', handlePropertyAutocomplete);
 app.post('/estimate', handleEstimate);
 app.post('/api/estimate', handleEstimate);
 
-const port = Number(process.env.PORT ?? 3000);
+const port = Number(process.env.PORT ?? 3001);
 app.listen(port, () => {
   console.log(`property-growth-estimator listening on http://localhost:${port}`);
 });
