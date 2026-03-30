@@ -35,6 +35,40 @@ export function parseLocationParts(input: Pick<PropertyGrowthInput, 'suburb' | '
   };
 }
 
+function normalizeStreetAddress(address: string): { unit: string | null; street: string } {
+  const trimmed = address.trim();
+  const slashMatch = trimmed.match(/^(\d+[A-Za-z]?)\s*\/\s*(.+)$/);
+  if (slashMatch) {
+    return {
+      unit: slashMatch[1],
+      street: slashMatch[2].trim()
+    };
+  }
+
+  return {
+    unit: null,
+    street: trimmed
+  };
+}
+
+export function buildPropertyUrls(input: Pick<PropertyGrowthInput, 'address' | 'suburb' | 'state' | 'postCode'>): {
+  realestate: string;
+  domain: string;
+  property: string;
+} {
+  const location = parseLocationParts(input);
+  const { unit, street } = normalizeStreetAddress(input.address);
+  const streetSlug = slugifySegment(street);
+  const suburbSlug = slugifySegment(location.suburb);
+  const unitPrefix = unit ? `${slugifySegment(unit)}-` : '';
+
+  return {
+    realestate: `https://www.realestate.com.au/property/${unitPrefix}${streetSlug}-${suburbSlug}-${location.state}-${location.postCode}/`,
+    domain: `https://www.domain.com.au/property-profile/${unitPrefix}${streetSlug}-${suburbSlug}-${location.state}-${location.postCode}`,
+    property: `https://www.property.com.au/${location.state}/${suburbSlug}-${location.postCode}/${streetSlug}/${unit ? `${slugifySegment(unit)}-` : ''}`
+  };
+}
+
 export function buildSuburbUrls(input: Pick<PropertyGrowthInput, 'suburb' | 'state' | 'postCode'>): { realestate: string; domain: string; property: string } {
   const location = parseLocationParts(input);
   const suburbSlug = slugifySegment(location.suburb);
