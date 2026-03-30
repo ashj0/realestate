@@ -86,12 +86,124 @@ function rollingTwelveMonthPeriod(): string {
   return '12 months';
 }
 
+function findArgonautScript(content: string): string | null {
+  const match = content.match(/window\.ArgonautExchange\s*=\s*(\{[\s\S]*?\});/);
+  return match?.[1] ?? null;
+}
+
+function collectNestedObjects(value: unknown, output: Record<string, unknown>[] = []): Record<string, unknown>[] {
+  if (!value) return output;
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if ((trimmed.startsWith('{') && trimmed.endsWith('}')) || (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
+      try {
+        collectNestedObjects(JSON.parse(trimmed), output);
+      } catch {
+        // ignore non-JSON strings
+      }
+    }
+    return output;
+  }
+
+  if (Array.isArray(value)) {
+    for (const item of value) collectNestedObjects(item, output);
+    return output;
+  }
+
+  if (typeof value === 'object') {
+    output.push(value as Record<string, unknown>);
+    for (const nested of Object.values(value as Record<string, unknown>)) {
+      collectNestedObjects(nested, output);
+    }
+  }
+
+  return output;
+}
+
+function firstString(value: unknown, seen = new Set<unknown>()): string | null {
+  if (value == null || seen.has(value)) return null;
+  if (typeof value === 'string') {
+    const normalized = normalizeWhitespace(value);
+    return normalized || null;
+  }
+
+  if (typeof value !== 'object') return null;
+  seen.add(value);
+
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const found = firstString(item, seen);
+      if (found) return found;
+    }
+    return null;
+  }
+
+  for (const nested of Object.values(value as Record<string, unknown>)) {
+    const found = firstString(nested, seen);
+    if (found) return found;
+  }
+
+  return null;
+}
+
+function parseRealestateArgonaut(content: string): {
+  propertyType: string | null;
+  soldHistory: SoldHistoryRecord[];
+  notes: string[];
+} | null {
+  const script = findArgonautScript(content);
+  if (!script) return null;
+
+  try {
+    const exchange = JSON.parse(script) as Record<string, unknown>;
+    const nestedObjects = collectNestedObjects(exchange);
+    const notes: string[] = ['Parsed ArgonautExchange structured data'];
+
+    let propertyType: string | null = null;
+    const soldHistory: SoldHistoryRecord[] = [];
+
+    for (const node of nestedObjects) {
+      if (!propertyType && 'propertyType' in node) {
+        const candidate = firstString((node as Record<string, unknown>).propertyType);
+        if (candidate) propertyType = candidate;
+      }
+
+      const keys = Object.keys(node);
+      const dateKey = keys.find((key) => /date/i.test(key));
+      const priceKey = keys.find((key) => /price/i.test(key));
+
+      if (dateKey && priceKey) {
+        const date = firstString(node[dateKey]);
+        const price = parseNumber(firstString(node[priceKey]));
+        if (date || price !== null) {
+          soldHistory.push({
+            date,
+            price,
+            source: 'realestate.com.au',
+            sourceUrl: null
+          });
+        }
+      }
+    }
+
+    return {
+      propertyType,
+      soldHistory,
+      notes
+    };
+  } catch {
+    return null;
+  }
+}
+
 export function extractRealestate(content: string, sourceUrl: string | null, address: string): SiteEstimate {
   const estimate = emptyEstimate('realestate.com.au', sourceUrl);
   if (!content) return estimate;
 
   const $ = load(content);
   const bodyText = normalizeWhitespace($.root().text());
+  const argonaut = parseRealestateArgonaut(content);
 
   const growthAttr = attrFromSelector($, ['[data-testid="growth-percentage"]'], 'growth');
   const growthText = textFromSelector($, ['[data-testid="growth-percentage"]', '[class*="MedianPriceGrowth__GrowthValue"]']);
@@ -102,8 +214,17 @@ export function extractRealestate(content: string, sourceUrl: string | null, add
   estimate.medianPrice = parseNumber(medianText);
   estimate.medianPricePeriod = rollingTwelveMonthPeriod();
   estimate.estimateUpdatedAt = updatedText ? normalizeWhitespace(updatedText) : null;
-  estimate.propertyTypeMatched = containsUnitContext(bodyText) || /\/property\/unit-/i.test(sourceUrl ?? '');
-  estimate.soldHistory = extractSoldHistoryFromText(bodyText, 'realestate.com.au', sourceUrl);
+
+  const argonautPropertyType = argonaut?.propertyType?.toLowerCase() ?? null;
+  estimate.propertyTypeMatched =
+    argonautPropertyType === 'unit' ||
+    argonautPropertyType === 'apartment' ||
+    containsUnitContext(bodyText) ||
+    /\/property\/unit-/i.test(sourceUrl ?? '');
+
+  estimate.soldHistory = argonaut?.soldHistory?.length
+    ? argonaut.soldHistory.slice(0, 10).map((item) => ({ ...item, sourceUrl }))
+    : extractSoldHistoryFromText(bodyText, 'realestate.com.au', sourceUrl);
   estimate.comparables = soldHistoryToComparables(estimate.soldHistory, address, 'realestate.com.au', sourceUrl);
 
   if (estimate.medianPrice !== null) {
@@ -111,6 +232,9 @@ export function extractRealestate(content: string, sourceUrl: string | null, add
   }
   if (estimate.suburbGrowthPercent !== null) {
     estimate.notes.push(`Growth: ${estimate.suburbGrowthPercent}% YoY`);
+  }
+  if (argonaut?.notes?.length) {
+    estimate.notes.push(...argonaut.notes);
   }
 
   return estimate;
