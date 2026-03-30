@@ -72,12 +72,12 @@ function parseRealestatePropertyUrl(value: string): {
 
   const propertyType: 'house' | 'unit' = slug.startsWith('unit-') ? 'unit' : 'house';
   const parts = slug.split('-').filter(Boolean);
-  const stateIndex = parts.findIndex((part) => /^[a-z]{2,3}$/.test(part) && part !== 'unit');
-  const postcodeIndex = parts.findIndex((part, index) => index > stateIndex && /^\d{4}$/.test(part));
+  const postcodeIndex = parts.findIndex((part) => /^\d{4}$/.test(part));
+  if (postcodeIndex < 2) return null;
 
-  if (stateIndex <= 0 || postcodeIndex <= stateIndex + 1) return null;
-
+  const stateIndex = postcodeIndex - 1;
   const state = parts[stateIndex]?.toUpperCase() ?? '';
+  if (!state || !/^[A-Z]{2,3}$/.test(state) || state === 'UNIT') return null;
   const postcode = parts[postcodeIndex] ?? '';
   const suburb = titleCaseWords(parts.slice(stateIndex + 1, postcodeIndex).join(' '));
   const addressStartIndex = propertyType === 'unit' ? 2 : 0;

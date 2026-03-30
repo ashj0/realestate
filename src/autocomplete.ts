@@ -136,12 +136,14 @@ function parseRealestatePropertyUrl(query: string): PropertyAutocompleteSuggesti
 
   const propertyType: 'house' | 'unit' = slug.startsWith('unit-') ? 'unit' : 'house';
   const parts = slug.split('-').filter(Boolean);
-  const stateIndex = parts.findIndex((part) => /^[a-z]{2,3}$/.test(part) && part !== 'unit');
-  const postcodeIndex = parts.findIndex((part, index) => index > stateIndex && /^\d{4}$/.test(part));
+  const postcodeIndex = parts.findIndex((part) => /^\d{4}$/.test(part));
+  if (postcodeIndex < 2) return null;
 
-  if (stateIndex <= 0 || postcodeIndex <= stateIndex + 1) return null;
+  const stateIndex = postcodeIndex - 1;
+  const stateToken = parts[stateIndex];
+  if (!stateToken || !/^[a-z]{2,3}$/.test(stateToken) || stateToken === 'unit') return null;
 
-  const state = normalizeState(parts[stateIndex]);
+  const state = normalizeState(stateToken);
   const postcode = parts[postcodeIndex] ?? '';
   const suburbWords = parts.slice(stateIndex + 1, postcodeIndex);
   const addressWords = parts.slice(propertyType === 'unit' ? 2 : 0, stateIndex);
