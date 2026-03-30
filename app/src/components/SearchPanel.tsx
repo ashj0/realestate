@@ -49,6 +49,45 @@ const suburbPostcodeHints: Record<string, { state: string; postcode: string }> =
   unley: { state: 'SA', postcode: '5061' },
 };
 
+function titleCaseWords(value: string) {
+  return value
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(' ');
+}
+
+function parseRealestatePropertyUrl(value: string): {
+  address: string;
+  suburb: string;
+  state: string;
+  postcode: string;
+  propertyType: 'house' | 'unit';
+} | null {
+  const match = value.trim().match(/^https?:\/\/(?:www\.)?realestate\.com\.au\/property\/([^/?#]+)\/?(?:\?.*)?$/i);
+  if (!match) return null;
+
+  const slug = match[1]?.trim().toLowerCase();
+  if (!slug) return null;
+
+  const propertyType: 'house' | 'unit' = slug.startsWith('unit-') ? 'unit' : 'house';
+  const parts = slug.split('-').filter(Boolean);
+  const stateIndex = parts.findIndex((part) => /^[a-z]{2,3}$/.test(part) && part !== 'unit');
+  const postcodeIndex = parts.findIndex((part, index) => index > stateIndex && /^\d{4}$/.test(part));
+
+  if (stateIndex <= 0 || postcodeIndex <= stateIndex + 1) return null;
+
+  const state = parts[stateIndex]?.toUpperCase() ?? '';
+  const postcode = parts[postcodeIndex] ?? '';
+  const suburb = titleCaseWords(parts.slice(stateIndex + 1, postcodeIndex).join(' '));
+  const addressStartIndex = propertyType === 'unit' ? 2 : 0;
+  const address = titleCaseWords(parts.slice(addressStartIndex, stateIndex).join(' '));
+
+  if (!address || !suburb || !state || !postcode) return null;
+
+  return { address, suburb, state, postcode, propertyType };
+}
+
 function PropertyMapDialog({
   open,
   options,
@@ -242,12 +281,14 @@ export function SearchPanel({ options, selected, onChange, onManualSubmit, mapOp
     !postcodeMismatch;
 
   function openManualDialog() {
+    const parsedUrl = parseRealestatePropertyUrl(searchText.trim());
+
     setManualDialogOpen(true);
-    setManualAddress(searchText.trim());
-    setManualSuburb('Rivervale');
-    setManualState('WA');
-    setManualPostcode('6103');
-    setManualPropertyType('unit');
+    setManualAddress(parsedUrl?.address ?? searchText.trim());
+    setManualSuburb(parsedUrl?.suburb ?? selected?.suburb ?? '');
+    setManualState(parsedUrl?.state ?? selected?.state ?? 'NSW');
+    setManualPostcode(parsedUrl?.postcode ?? selected?.postcode ?? '');
+    setManualPropertyType(parsedUrl?.propertyType ?? selected?.propertyType ?? 'house');
   }
 
   function handleManualSubmit() {
