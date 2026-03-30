@@ -87,6 +87,64 @@ function rollingTwelveMonthPeriod(): string {
   return '12 months';
 }
 
+function decodeUnicodeEscapes(value: string): string {
+  return value.replace(/\\u([0-9a-fA-F]{4})/g, (_, hex: string) => String.fromCharCode(parseInt(hex, 16)));
+}
+
+function parseEmbeddedPropertyJson(content: string): Record<string, unknown> | null {
+  const marker = '\"marketTrends\":';
+  const start = content.indexOf(marker);
+  if (start === -1) return null;
+
+  let i = start + marker.length;
+  while (i < content.length && /\s/.test(content[i] ?? '')) i += 1;
+  if (content[i] !== '{') return null;
+
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+  let end = -1;
+
+  for (let j = i; j < content.length; j += 1) {
+    const ch = content[j] ?? '';
+    if (inString) {
+      if (escaped) {
+        escaped = false;
+      } else if (ch === '\\') {
+        escaped = true;
+      } else if (ch === '"') {
+        inString = false;
+      }
+      continue;
+    }
+
+    if (ch === '"') {
+      inString = true;
+      continue;
+    }
+    if (ch === '{') {
+      depth += 1;
+      continue;
+    }
+    if (ch === '}') {
+      depth -= 1;
+      if (depth === 0) {
+        end = j + 1;
+        break;
+      }
+    }
+  }
+
+  if (end === -1) return null;
+
+  const rawObject = content.slice(i, end);
+  try {
+    return JSON.parse(decodeUnicodeEscapes(rawObject)) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
+
 function findArgonautScript(content: string): string | null {
   const match = content.match(/window\.ArgonautExchange\s*=\s*(\{[\s\S]*?\});/);
   return match?.[1] ?? null;
@@ -404,15 +462,53 @@ export function extractProperty(content: string, sourceUrl: string | null, addre
 
   const $ = load(content);
   const bodyText = normalizeWhitespace($.root().text());
+  const embedded = parseEmbeddedPropertyJson(content);
+  const marketInsights = embedded?.marketInsightsV3 as Record<string, unknown> | undefined;
+  const medianPrice = marketInsights?.medianPrice as Record<string, unknown> | undefined;
+  const medianPriceCost = medianPrice?.cost as Record<string, unknown> | undefined;
+  const medianPriceChange = medianPrice?.costChange as Record<string, unknown> | undefined;
+  const marketTrends = embedded?.marketTrends as Record<string, unknown> | undefined;
+  const otherSimilarSoldProperties = marketTrends?.otherSimilarSoldProperties as Record<string, unknown> | undefined;
+  const comparableSoldProperties = marketTrends?.comparableSoldProperties as Record<string, unknown> | undefined;
+  const comparableList = Array.isArray(comparableSoldProperties?.properties)
+    ? comparableSoldProperties.properties as Array<Record<string, unknown>>
+    : Array.isArray(otherSimilarSoldProperties?.properties)
+      ? otherSimilarSoldProperties.properties as Array<Record<string, unknown>>
+      : [];
 
   const growthTexts = textsFromSelector($, ['[class*="CostChange__TrendIndicator"]', '[class^="MedianCostBrick__TrendIndicator"]']);
   const medianText = textFromSelector($, ['[class^="MedianCostBrick__CostValue"]']);
-  estimate.suburbGrowthPercent = firstParsedPercent(growthTexts) ?? parsePercent(textFromSelector($, ['[class^="MedianCostBrick__TrendIndicator"]']));
-  estimate.medianPrice = parseNumber(medianText);
+  estimate.suburbGrowthPercent = parsePercent(firstString(medianPriceChange?.value))
+    ?? firstParsedPercent(growthTexts)
+    ?? parsePercent(textFromSelector($, ['[class^="MedianCostBrick__TrendIndicator"]']));
+  estimate.medianPrice = parseNumber(firstString(medianPriceCost?.title)) ?? parseNumber(medianText);
   estimate.medianPricePeriod = rollingTwelveMonthPeriod();
   estimate.propertyTypeMatched = containsUnitContext(bodyText) || /\/unit-/i.test(bodyText);
   estimate.soldHistory = extractSoldHistoryFromText(bodyText, 'property.com.au', sourceUrl);
-  estimate.comparables = soldHistoryToComparables(estimate.soldHistory, address, 'property.com.au', sourceUrl);
+
+  estimate.comparables = comparableList
+    .map((item) => {
+      const path = firstString(item.pathV2);
+      const soldDateRaw = firstString(item.soldDate);
+      return {
+        address: firstString(item.address) ?? address,
+        saleDate: soldDateRaw ? soldDateRaw.slice(0, 10) : null,
+        salePrice: parseNumber(firstString((item.priceV2 as Record<string, unknown> | undefined)?.display)),
+        source: 'property.com.au' as SiteLabel,
+        sourceUrl: path
+          ? (path.startsWith('http') ? path : `https://www.property.com.au${path}`)
+          : sourceUrl
+      } satisfies ComparableRecord;
+    })
+    .filter((item) => item.address && !addressesMatch(item.address, address) && item.salePrice !== null)
+    .slice(0, 6);
+
+  if (!estimate.comparables.length) {
+    estimate.comparables = soldHistoryToComparables(estimate.soldHistory, address, 'property.com.au', sourceUrl);
+    estimate.notes.push('Fell back to text-derived comparables; no structured market-trends comparables found');
+  } else {
+    estimate.notes.push(`Parsed ${estimate.comparables.length} comparables from property.com.au market-trends`);
+  }
 
   if (estimate.medianPrice !== null) {
     estimate.notes.push(`Median: $${estimate.medianPrice.toLocaleString('en-AU')}`);
