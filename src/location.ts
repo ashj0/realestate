@@ -6,6 +6,29 @@ export interface ParsedLocation {
   postCode: string;
 }
 
+const streetTypeMap: Record<string, string> = {
+  street: 'st',
+  st: 'st',
+  road: 'rd',
+  rd: 'rd',
+  parade: 'pde',
+  pde: 'pde',
+  avenue: 'ave',
+  ave: 'ave',
+  drive: 'dr',
+  dr: 'dr',
+  place: 'pl',
+  pl: 'pl',
+  court: 'ct',
+  ct: 'ct',
+  terrace: 'tce',
+  tce: 'tce',
+  crescent: 'cres',
+  cres: 'cres',
+  lane: 'ln',
+  ln: 'ln'
+};
+
 export function slugifySegment(value: string): string {
   return value
     .trim()
@@ -51,6 +74,18 @@ function normalizeStreetAddress(address: string): { unit: string | null; street:
   };
 }
 
+function normalizeStreetForProvider(street: string, provider: 'realestate' | 'domain' | 'property'): string {
+  const parts = street.trim().split(/\s+/);
+  if (!parts.length) return street;
+
+  const last = parts[parts.length - 1]?.toLowerCase() ?? '';
+  const mapped = streetTypeMap[last];
+  if (!mapped) return street;
+
+  const nextParts = [...parts.slice(0, -1), provider === 'domain' ? last : mapped];
+  return nextParts.join(' ');
+}
+
 export function buildPropertyUrls(input: Pick<PropertyGrowthInput, 'address' | 'suburb' | 'state' | 'postCode'>): {
   realestate: string;
   domain: string;
@@ -58,14 +93,17 @@ export function buildPropertyUrls(input: Pick<PropertyGrowthInput, 'address' | '
 } {
   const location = parseLocationParts(input);
   const { unit, street } = normalizeStreetAddress(input.address);
-  const streetSlug = slugifySegment(street);
   const suburbSlug = slugifySegment(location.suburb);
-  const unitPrefix = unit ? `${slugifySegment(unit)}-` : '';
+
+  const realestateStreetSlug = slugifySegment(normalizeStreetForProvider(street, 'realestate'));
+  const domainStreetSlug = slugifySegment(normalizeStreetForProvider(street, 'domain'));
+  const propertyStreetSlug = slugifySegment(normalizeStreetForProvider(street, 'property'));
+  const unitSlug = unit ? slugifySegment(unit) : null;
 
   return {
-    realestate: `https://www.realestate.com.au/property/${unitPrefix}${streetSlug}-${suburbSlug}-${location.state}-${location.postCode}/`,
-    domain: `https://www.domain.com.au/property-profile/${unitPrefix}${streetSlug}-${suburbSlug}-${location.state}-${location.postCode}`,
-    property: `https://www.property.com.au/${location.state}/${suburbSlug}-${location.postCode}/${streetSlug}/${unit ? `${slugifySegment(unit)}-` : ''}`
+    realestate: `https://www.realestate.com.au/property/${unitSlug ? `unit-${unitSlug}-` : ''}${realestateStreetSlug}-${suburbSlug}-${location.state}-${location.postCode}/`,
+    domain: `https://www.domain.com.au/property-profile/${unitSlug ? `${unitSlug}-` : ''}${domainStreetSlug}-${suburbSlug}-${location.state}-${location.postCode}`,
+    property: `https://www.property.com.au/${location.state}/${suburbSlug}-${location.postCode}/${propertyStreetSlug}/${unitSlug ? `${unitSlug}-` : ''}`
   };
 }
 

@@ -51,6 +51,7 @@ export interface SiteEstimate {
   estimateAccuracy: string | null;
   estimateUpdatedAt: string | null;
   propertyTypeMatched: boolean;
+  heroImageUrl?: string | null;
   comparables: ComparableRecord[];
   soldHistory: SoldHistoryRecord[];
   sourceUrl: string | null;

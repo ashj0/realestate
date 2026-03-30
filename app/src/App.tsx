@@ -215,7 +215,7 @@ export default function App() {
                 onMapClose={() => setShowMap(false)}
                 apiBaseUrl={API_BASE_URL}
               />
-              <SelectedSuburbCard property={selectedProperty} />
+              <SelectedSuburbCard property={selectedProperty} estimate={result} />
               {result ? (
                 <EstimateSummaryCard
                   result={result}

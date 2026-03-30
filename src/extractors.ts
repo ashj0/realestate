@@ -12,6 +12,7 @@ function emptyEstimate(label: SiteLabel, sourceUrl: string | null): SiteEstimate
     estimateAccuracy: null,
     estimateUpdatedAt: null,
     propertyTypeMatched: false,
+    heroImageUrl: null,
     comparables: [],
     soldHistory: [],
     sourceUrl,
@@ -198,6 +199,7 @@ function addressesMatch(candidate: string, target: string): boolean {
 
 function parseRealestateArgonaut(content: string, targetAddress: string): {
   propertyType: string | null;
+  heroImageUrl: string | null;
   soldHistory: SoldHistoryRecord[];
   comparables: ComparableRecord[];
   notes: string[];
@@ -211,6 +213,7 @@ function parseRealestateArgonaut(content: string, targetAddress: string): {
     const notes: string[] = ['Parsed ArgonautExchange structured data'];
 
     let propertyType: string | null = null;
+    let heroImageUrl: string | null = null;
     const soldHistory: SoldHistoryRecord[] = [];
     const comparables: ComparableRecord[] = [];
     const seenHistory = new Set<string>();
@@ -220,6 +223,15 @@ function parseRealestateArgonaut(content: string, targetAddress: string): {
       if (!propertyType && 'propertyType' in node) {
         const candidate = firstString((node as Record<string, unknown>).propertyType);
         if (candidate) propertyType = candidate;
+      }
+      if (!heroImageUrl) {
+        const imageCandidate = firstString((node as Record<string, unknown>).heroImageUrl)
+          ?? firstString((node as Record<string, unknown>).mainImage)
+          ?? firstString((node as Record<string, unknown>).image)
+          ?? firstString((node as Record<string, unknown>).images);
+        if (imageCandidate && /^https?:\/\//i.test(imageCandidate) && /\.(jpg|jpeg|png|webp)/i.test(imageCandidate)) {
+          heroImageUrl = imageCandidate;
+        }
       }
 
       const addressCandidates = Array.from(collectAddressLikeStrings(node));
@@ -272,6 +284,7 @@ function parseRealestateArgonaut(content: string, targetAddress: string): {
 
     return {
       propertyType,
+      heroImageUrl,
       soldHistory,
       comparables,
       notes
@@ -299,6 +312,7 @@ export function extractRealestate(content: string, sourceUrl: string | null, add
   estimate.medianPricePeriod = rollingTwelveMonthPeriod();
   estimate.estimateUpdatedAt = updatedText ? normalizeWhitespace(updatedText) : null;
 
+  estimate.heroImageUrl = argonaut?.heroImageUrl ?? null;
   const argonautPropertyType = argonaut?.propertyType?.toLowerCase() ?? null;
   estimate.propertyTypeMatched =
     argonautPropertyType === 'unit' ||
