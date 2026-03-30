@@ -200,6 +200,7 @@ function addressesMatch(candidate: string, target: string): boolean {
 function parseRealestateArgonaut(content: string, targetAddress: string): {
   propertyType: string | null;
   heroImageUrl: string | null;
+  propertyComUrl: string | null;
   soldHistory: SoldHistoryRecord[];
   comparables: ComparableRecord[];
   notes: string[];
@@ -214,6 +215,7 @@ function parseRealestateArgonaut(content: string, targetAddress: string): {
 
     let propertyType: string | null = null;
     let heroImageUrl: string | null = null;
+    let propertyComUrl: string | null = null;
     const soldHistory: SoldHistoryRecord[] = [];
     const comparables: ComparableRecord[] = [];
     const seenHistory = new Set<string>();
@@ -230,7 +232,15 @@ function parseRealestateArgonaut(content: string, targetAddress: string): {
           ?? firstString((node as Record<string, unknown>).image)
           ?? firstString((node as Record<string, unknown>).images);
         if (imageCandidate && /^https?:\/\//i.test(imageCandidate) && /\.(jpg|jpeg|png|webp)/i.test(imageCandidate)) {
-          heroImageUrl = imageCandidate;
+          heroImageUrl = imageCandidate.replace('{width}', '800').replace('{height}', '600');
+        }
+      }
+      if (!propertyComUrl) {
+        const hrefCandidate = firstString((node as Record<string, unknown>).href)
+          ?? firstString((node as Record<string, unknown>).url)
+          ?? firstString((node as Record<string, unknown>).link);
+        if (hrefCandidate && /property\.com\.au/i.test(hrefCandidate)) {
+          propertyComUrl = hrefCandidate.replace(/\\u002F/g, '/');
         }
       }
 
@@ -285,6 +295,7 @@ function parseRealestateArgonaut(content: string, targetAddress: string): {
     return {
       propertyType,
       heroImageUrl,
+      propertyComUrl,
       soldHistory,
       comparables,
       notes
@@ -292,6 +303,10 @@ function parseRealestateArgonaut(content: string, targetAddress: string): {
   } catch {
     return null;
   }
+}
+
+export function extractRealestatePropertyComUrl(content: string, address: string): string | null {
+  return parseRealestateArgonaut(content, address)?.propertyComUrl ?? null;
 }
 
 export function extractRealestate(content: string, sourceUrl: string | null, address: string): SiteEstimate {

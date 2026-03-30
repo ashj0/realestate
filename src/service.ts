@@ -1,6 +1,6 @@
 import type { ComparableRecord, PropertyGrowthInput, PropertyGrowthResult, SiteEstimate, SiteLabel } from './types.js';
 import { saveDebugHtml } from './debug.js';
-import { extractDomain, extractProperty, extractRealestate } from './extractors.js';
+import { extractDomain, extractProperty, extractRealestate, extractRealestatePropertyComUrl } from './extractors.js';
 import { buildPropertyUrls, buildSuburbUrls } from './location.js';
 import { fetchScrapflyContent } from './scrapfly.js';
 import { average, uniqueBy } from './utils.js';
@@ -71,7 +71,7 @@ export async function estimatePropertyGrowth(input: PropertyGrowthInput, _proxyU
   const urls = {
     realestate: input.knownUrls?.realestate ?? propertyUrls.realestate ?? suburbUrls.realestate ?? DEFAULT_URLS.realestate,
     domain: input.knownUrls?.domain ?? propertyUrls.domain ?? suburbUrls.domain ?? DEFAULT_URLS.domain,
-    property: input.knownUrls?.property ?? propertyUrls.property ?? suburbUrls.property ?? DEFAULT_URLS.property
+    property: input.knownUrls?.property ?? suburbUrls.property ?? DEFAULT_URLS.property
   };
 
   const siteEstimates = emptySiteEstimates(input);
@@ -82,26 +82,33 @@ export async function estimatePropertyGrowth(input: PropertyGrowthInput, _proxyU
     throw new Error('SCRAPFLY_API_KEY environment variable is required');
   }
 
-  await Promise.all([
-    fetchScrapflyContent(urls.realestate, apiKey)
-      .then(async (content) => {
-        await saveDebugHtml('realestate', content);
-        siteEstimates.realestate_com_au = extractRealestate(content, urls.realestate, input.address);
-      })
-      .catch((error: Error) => errors.push(`realestate.com.au: ${error.message}`)),
-    fetchScrapflyContent(urls.domain, apiKey)
-      .then(async (content) => {
-        await saveDebugHtml('domain', content);
-        siteEstimates.domain_com_au = extractDomain(content, urls.domain, input.address);
-      })
-      .catch((error: Error) => errors.push(`domain.com.au: ${error.message}`)),
-    fetchScrapflyContent(urls.property, apiKey)
-      .then(async (content) => {
-        await saveDebugHtml('property', content);
-        siteEstimates.property_com_au = extractProperty(content, urls.property, input.address);
-      })
-      .catch((error: Error) => errors.push(`property.com.au: ${error.message}`))
-  ]);
+  try {
+    const content = await fetchScrapflyContent(urls.realestate, apiKey);
+    await saveDebugHtml('realestate', content);
+    siteEstimates.realestate_com_au = extractRealestate(content, urls.realestate, input.address);
+    const discoveredPropertyUrl = extractRealestatePropertyComUrl(content, input.address);
+    if (discoveredPropertyUrl) {
+      urls.property = discoveredPropertyUrl;
+    }
+  } catch (error) {
+    errors.push(`realestate.com.au: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+
+  try {
+    const content = await fetchScrapflyContent(urls.domain, apiKey);
+    await saveDebugHtml('domain', content);
+    siteEstimates.domain_com_au = extractDomain(content, urls.domain, input.address);
+  } catch (error) {
+    errors.push(`domain.com.au: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+
+  try {
+    const content = await fetchScrapflyContent(urls.property, apiKey);
+    await saveDebugHtml('property', content);
+    siteEstimates.property_com_au = extractProperty(content, urls.property, input.address);
+  } catch (error) {
+    errors.push(`property.com.au: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
 
   const { values, sitesUsed } = collectGrowths(siteEstimates);
   const growthPercent = average(values);

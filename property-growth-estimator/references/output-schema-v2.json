@@ -57,7 +57,7 @@
     "siteEstimate": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["label", "suburbGrowthPercent", "medianPrice", "medianPricePeriod", "propertyEstimateRange", "estimateAccuracy", "estimateUpdatedAt", "propertyTypeMatched", "comparables", "soldHistory", "sourceUrl", "notes"],
+      "required": ["label", "suburbGrowthPercent", "medianPrice", "medianPricePeriod", "propertyEstimateRange", "estimateAccuracy", "estimateUpdatedAt", "propertyTypeMatched", "heroImageUrl", "comparables", "soldHistory", "sourceUrl", "notes"],
       "properties": {
         "label": { "type": "string" },
         "suburbGrowthPercent": { "type": ["number", "null"] },
@@ -76,6 +76,7 @@
         "estimateAccuracy": { "type": ["string", "null"] },
         "estimateUpdatedAt": { "type": ["string", "null"] },
         "propertyTypeMatched": { "type": "boolean" },
+        "heroImageUrl": { "type": ["string", "null"] },
         "comparables": {
           "type": "array",
           "maxItems": 10,
