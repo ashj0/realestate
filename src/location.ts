@@ -36,7 +36,7 @@ export function parseLocationParts(input: Pick<PropertyGrowthInput, 'suburb' | '
 }
 
 function normalizeStreetAddress(address: string): { unit: string | null; street: string } {
-  const trimmed = address.trim();
+  const trimmed = address.trim().split(',')[0]?.trim() ?? address.trim();
   const slashMatch = trimmed.match(/^(\d+[A-Za-z]?)\s*\/\s*(.+)$/);
   if (slashMatch) {
     return {
