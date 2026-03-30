@@ -292,9 +292,10 @@ export function SearchPanel({ options, selected, onChange, onManualSubmit, mapOp
   }
 
   function handleManualSubmit() {
-    const address = manualAddress.trim();
-    const suburb = manualSuburb.trim();
-    const postcode = manualPostcode.trim();
+    const parsedUrl = parseRealestatePropertyUrl(manualAddress.trim());
+    const address = (parsedUrl?.address ?? manualAddress).trim();
+    const suburb = (parsedUrl?.suburb ?? manualSuburb).trim();
+    const postcode = (parsedUrl?.postcode ?? manualPostcode).trim();
 
     if (!canUseManualProperty || !manualState) {
       return;
@@ -306,9 +307,9 @@ export function SearchPanel({ options, selected, onChange, onManualSubmit, mapOp
       id: `manual-${Date.now()}`,
       address: fullAddress,
       suburb,
-      state: manualState,
+      state: parsedUrl?.state ?? manualState,
       postcode,
-      propertyType: manualPropertyType,
+      propertyType: parsedUrl?.propertyType ?? manualPropertyType,
     });
 
     setManualSelectionActive(true);
@@ -450,7 +451,6 @@ export function SearchPanel({ options, selected, onChange, onManualSubmit, mapOp
 
                 const parsedUrl = parseRealestatePropertyUrl(nextValue);
                 if (parsedUrl) {
-                  setManualAddress(parsedUrl.address);
                   setManualSuburb(parsedUrl.suburb);
                   setManualState(parsedUrl.state);
                   setManualPostcode(parsedUrl.postcode);
