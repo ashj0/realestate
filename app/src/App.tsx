@@ -255,7 +255,13 @@ export default function App() {
                 disabled={!canGenerate || loading}
                 onSubmit={handleGenerateEstimate}
               />
-              {result ? <SourceBreakdown siteEstimates={result.siteEstimates} /> : null}
+              {result ? (
+                <SourceBreakdown
+                  siteEstimates={result.siteEstimates}
+                  currentValuation={result.result.currentValuation}
+                  lastYearValuation={result.input.lastYearValuation}
+                />
+              ) : null}
             </Stack>
           </Box>
 

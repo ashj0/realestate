@@ -1,10 +1,13 @@
+import CircleRoundedIcon from '@mui/icons-material/CircleRounded';
 import LaunchRoundedIcon from '@mui/icons-material/LaunchRounded';
 import { Box, Button, Chip, Paper, Stack, Typography } from '@mui/material';
 import type { EstimateApiResponse, SiteEstimate } from '../types';
-import { formatPercent } from '../utils';
+import { formatCurrency, formatPercent } from '../utils';
 
 interface SourceBreakdownProps {
   siteEstimates: EstimateApiResponse['siteEstimates'];
+  currentValuation: number | null;
+  lastYearValuation: number;
 }
 
 function estimateRows(siteEstimates: EstimateApiResponse['siteEstimates']) {
@@ -19,7 +22,17 @@ function growthLabel(site: SiteEstimate) {
   return site.suburbGrowthPercent === null ? 'Unavailable' : formatPercent(site.suburbGrowthPercent);
 }
 
-export function SourceBreakdown({ siteEstimates }: SourceBreakdownProps) {
+function growthColor(site: SiteEstimate) {
+  if (site.suburbGrowthPercent === null) return 'text.secondary';
+  return site.suburbGrowthPercent > 0 ? 'success.main' : 'text.secondary';
+}
+
+function currentPositionColor(currentValuation: number | null, lastYearValuation: number) {
+  if (currentValuation === null) return 'text.primary';
+  return currentValuation < lastYearValuation ? 'error.main' : 'text.primary';
+}
+
+export function SourceBreakdown({ siteEstimates, currentValuation, lastYearValuation }: SourceBreakdownProps) {
   const rows = estimateRows(siteEstimates);
 
   return (
@@ -30,9 +43,20 @@ export function SourceBreakdown({ siteEstimates }: SourceBreakdownProps) {
           <Typography color="text.secondary">
             Growth signals and source links across the configured property sites.
           </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Sources used: {rows.filter((site) => site.sourceUrl || site.suburbGrowthPercent !== null).length}
-          </Typography>
+          <Stack direction="row" spacing={2} useFlexGap flexWrap="wrap" alignItems="center">
+            <Typography variant="body2" color="text.secondary">
+              Sources used: {rows.filter((site) => site.sourceUrl || site.suburbGrowthPercent !== null).length}
+            </Typography>
+            <Stack direction="row" spacing={0.75} alignItems="center">
+              <CircleRoundedIcon
+                fontSize="medium"
+                sx={{ color: currentPositionColor(currentValuation, lastYearValuation) }}
+              />
+              <Typography variant="body2" color="text.secondary">
+                Current property position: {currentValuation === null ? 'Unavailable' : formatCurrency(currentValuation)}
+              </Typography>
+            </Stack>
+          </Stack>
         </Stack>
 
         <Stack spacing={1.5}>
@@ -40,8 +64,11 @@ export function SourceBreakdown({ siteEstimates }: SourceBreakdownProps) {
             <Paper key={site.label} variant="outlined" sx={{ p: 2.25, borderRadius: 4 }}>
               <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" spacing={2}>
                 <Stack spacing={1}>
-                  <Typography fontWeight={700}>{site.label}</Typography>
-                  <Typography color="text.secondary">Growth: {growthLabel(site)}</Typography>
+                  <Stack direction="row" spacing={1} alignItems="center" useFlexGap flexWrap="wrap">
+                    <CircleRoundedIcon fontSize="medium" sx={{ color: growthColor(site) }} />
+                    <Typography fontWeight={700}>{site.label}</Typography>
+                  </Stack>
+                  <Typography sx={{ color: growthColor(site) }}>Growth: {growthLabel(site)}</Typography>
                   <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
                     <Chip label={site.propertyTypeMatched ? 'Property type matched' : 'Property type mismatch'} size="small" />
                     {site.medianPricePeriod ? <Chip label={site.medianPricePeriod} size="small" variant="outlined" /> : null}
