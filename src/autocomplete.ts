@@ -1,5 +1,7 @@
 import axios from 'axios';
 
+const REALESTATE_PROPERTY_URL_PATTERN = /^https?:\/\/(?:www\.)?realestate\.com\.au\/property\/([^/?#]+)\/?(?:\?.*)?$/i;
+
 function normalizeAutocompleteQuery(query: string): string[] {
   const trimmed = query.trim().replace(/\s+/g, ' ');
   if (!trimmed) return [];
@@ -45,6 +47,7 @@ interface NominatimResult {
     country_code?: string;
     [key: string]: string | undefined;
   };
+  class?: string;
   type?: string;
   addresstype?: string;
 }
@@ -89,12 +92,26 @@ function buildAddress(result: NominatimResult): string {
   return [street, locality].filter(Boolean).join(', ') || result.display_name;
 }
 
+function isAddressLikeResult(result: NominatimResult): boolean {
+  const addressType = (result.addresstype ?? '').toLowerCase();
+  const resultType = (result.type ?? '').toLowerCase();
+  const resultClass = (result.class ?? '').toLowerCase();
+  const hasHouseNumber = Boolean(result.address?.house_number?.trim());
+
+  if (hasHouseNumber) return true;
+  if (addressType === 'road' || resultType === 'road') return false;
+  if (resultClass === 'highway') return false;
+
+  return ['building', 'residential', 'house', 'apartments', 'apartment'].includes(addressType)
+    || ['building', 'residential', 'house', 'apartments', 'apartment'].includes(resultType);
+}
+
 function toSuggestion(result: NominatimResult): PropertyAutocompleteSuggestion | null {
   const suburb = (result.address?.suburb ?? result.address?.town ?? result.address?.city_district ?? result.address?.city ?? '').trim();
   const state = normalizeState(result.address?.state);
   const postcode = result.address?.postcode?.trim() ?? '';
 
-  if (!suburb || !state || !postcode) {
+  if (!suburb || !state || !postcode || !isAddressLikeResult(result)) {
     return null;
   }
 
@@ -110,9 +127,54 @@ function toSuggestion(result: NominatimResult): PropertyAutocompleteSuggestion |
   };
 }
 
+function parseRealestatePropertyUrl(query: string): PropertyAutocompleteSuggestion | null {
+  const match = query.trim().match(REALESTATE_PROPERTY_URL_PATTERN);
+  if (!match) return null;
+
+  const slug = match[1]?.trim().toLowerCase();
+  if (!slug) return null;
+
+  const propertyType: 'house' | 'unit' = slug.startsWith('unit-') ? 'unit' : 'house';
+  const parts = slug.split('-').filter(Boolean);
+  const stateIndex = parts.findIndex((part) => /^[a-z]{2,3}$/.test(part) && part !== 'unit');
+  const postcodeIndex = parts.findIndex((part, index) => index > stateIndex && /^\d{4}$/.test(part));
+
+  if (stateIndex <= 0 || postcodeIndex <= stateIndex + 1) return null;
+
+  const state = normalizeState(parts[stateIndex]);
+  const postcode = parts[postcodeIndex] ?? '';
+  const suburbWords = parts.slice(stateIndex + 1, postcodeIndex);
+  const addressWords = parts.slice(propertyType === 'unit' ? 2 : 0, stateIndex);
+
+  if (!addressWords.length || !suburbWords.length || !postcode) return null;
+
+  const titleCase = (value: string) => value
+    .split('-')
+    .filter(Boolean)
+    .map((segment) => segment.length ? segment[0].toUpperCase() + segment.slice(1) : segment)
+    .join(' ');
+
+  const address = `${titleCase(addressWords.join('-'))}, ${titleCase(suburbWords.join('-'))} ${state} ${postcode}`;
+  const suburb = titleCase(suburbWords.join('-'));
+
+  return {
+    id: `realestate-url:${slug}`,
+    address,
+    suburb,
+    state,
+    postcode,
+    propertyType,
+    lat: 0,
+    lng: 0,
+  };
+}
+
 export async function searchPropertyAutocomplete(query: string): Promise<PropertyAutocompleteSuggestion[]> {
   const trimmed = query.trim();
   if (trimmed.length < 3) return [];
+
+  const directRealestateMatch = parseRealestatePropertyUrl(trimmed);
+  if (directRealestateMatch) return [directRealestateMatch];
 
   const queryVariants = normalizeAutocompleteQuery(trimmed);
   const deduped = new Map<string, PropertyAutocompleteSuggestion>();
