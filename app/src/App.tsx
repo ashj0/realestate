@@ -43,6 +43,21 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [manualProperties, setManualProperties] = useState<PropertyOption[]>([]);
 
+  function clearEstimateState() {
+    setResult(null);
+    setError(null);
+  }
+
+  function handleSelectedPropertyChange(property: PropertyOption | null) {
+    setSelectedProperty(property);
+    clearEstimateState();
+  }
+
+  function handleLastYearValuationChange(value: string) {
+    setLastYearValuation(value);
+    clearEstimateState();
+  }
+
   const canGenerate = useMemo(() => {
     return Boolean(
       selectedProperty &&
@@ -135,8 +150,8 @@ export default function App() {
       return;
     }
 
+    clearEstimateState();
     setLoading(true);
-    setError(null);
 
     try {
       const response = await fetch(`${API_BASE_URL}/estimate`, {
@@ -197,7 +212,7 @@ export default function App() {
               <SearchPanel
                 options={[...manualProperties, ...propertyOptions]}
                 selected={selectedProperty}
-                onChange={setSelectedProperty}
+                onChange={handleSelectedPropertyChange}
                 onManualSubmit={(value) => {
                   const manualProperty: PropertyOption = {
                     ...value,
@@ -206,9 +221,7 @@ export default function App() {
                     isManual: true,
                   };
                   setManualProperties((current) => [manualProperty, ...current.filter((item) => item.id !== manualProperty.id)]);
-                  setSelectedProperty(manualProperty);
-                  setResult(null);
-                  setError(null);
+                  handleSelectedPropertyChange(manualProperty);
                 }}
                 mapOpen={showMap}
                 onMapOpen={() => setShowMap(true)}
@@ -234,7 +247,7 @@ export default function App() {
                 sellingCostPercent={sellingCostPercent}
                 existingLoanInterestRate={existingLoanInterestRate}
                 retainedEquityPercent={retainedEquityPercent}
-                onValuationChange={setLastYearValuation}
+                onValuationChange={handleLastYearValuationChange}
                 onLoanBalanceChange={setLoanBalance}
                 onSellingCostPercentChange={setSellingCostPercent}
                 onExistingLoanInterestRateChange={setExistingLoanInterestRate}
