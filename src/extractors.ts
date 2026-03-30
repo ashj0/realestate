@@ -115,6 +115,37 @@ function extractNeighbouringPropertyRecords(items: Array<Record<string, unknown>
     .slice(0, 6);
 }
 
+function extractPropertyMarketTrendCards($: ReturnType<typeof load>, address: string, sourceUrl: string | null): ComparableRecord[] {
+  const cards: ComparableRecord[] = [];
+
+  $('#market-trends [data-testid="property-tile"]').each((_, element) => {
+    const root = $(element);
+    const href = root.find('a[data-testid="pca-link"]').first().attr('href');
+    const title = normalizeWhitespace(root.find('.PropertyTile__Title-sc-1rgdlj6-6, [title*="$"], [data-source-level]').first().text());
+    const timeAgo = normalizeWhitespace(root.find('.PropertyTile__TitleExtra-sc-1rgdlj6-5').first().text());
+    const subtitle = normalizeWhitespace(root.find('.PropertyTile__Subtitle-sc-1rgdlj6-7').first().text());
+    const featureValues = root.find('.PropertyFeature__ValueWithUnit-sc-k36fs4-1').map((__, node) => normalizeWhitespace($(node).text())).get();
+
+    const comparable = {
+      address: subtitle || address,
+      salePrice: parseNumber(title),
+      saleDate: timeAgo || null,
+      bedrooms: parseNumber(featureValues[0]),
+      bathrooms: parseNumber(featureValues[1]),
+      parking: parseNumber(featureValues[2]),
+      source: 'property.com.au' as SiteLabel,
+      sourceUrl: href
+        ? (href.startsWith('http') ? href : `https://www.property.com.au${href}`)
+        : sourceUrl
+    } satisfies ComparableRecord;
+
+    if (!comparable.address || addressesMatch(comparable.address, address) || comparable.salePrice === null) return;
+    cards.push(comparable);
+  });
+
+  return cards.slice(0, 6);
+}
+
 function rollingTwelveMonthPeriod(): string {
   return '12 months';
 }
@@ -520,19 +551,24 @@ export function extractProperty(content: string, sourceUrl: string | null, addre
   estimate.propertyTypeMatched = containsUnitContext(bodyText) || /\/unit-/i.test(bodyText);
   estimate.soldHistory = extractSoldHistoryFromText(bodyText, 'property.com.au', sourceUrl);
 
+  const marketTrendCardComparables = extractPropertyMarketTrendCards($, address, sourceUrl);
   const directComparables = extractComparableRecords(comparableSoldList, address, sourceUrl);
   const fallbackComparables = extractComparableRecords(otherSimilarSoldList, address, sourceUrl);
   const neighbouringComparables = extractNeighbouringPropertyRecords((argonautData?.comparables ?? []).map((item) => ({
     fullAddress: item.address,
     propertyPageLink: item.sourceUrl
   })), address);
-  estimate.comparables = directComparables.length
-    ? directComparables
-    : fallbackComparables.length
-      ? fallbackComparables
-      : neighbouringComparables;
+  estimate.comparables = marketTrendCardComparables.length
+    ? marketTrendCardComparables
+    : directComparables.length
+      ? directComparables
+      : fallbackComparables.length
+        ? fallbackComparables
+        : neighbouringComparables;
 
-  if (directComparables.length) {
+  if (marketTrendCardComparables.length) {
+    estimate.notes.push(`Parsed ${marketTrendCardComparables.length} sold comparables from property.com.au market-trends cards`);
+  } else if (directComparables.length) {
     estimate.notes.push(`Parsed ${directComparables.length} comparables from property.com.au comparableSoldProperties`);
   } else if (fallbackComparables.length) {
     estimate.notes.push(`Parsed ${fallbackComparables.length} comparables from property.com.au otherSimilarSoldProperties`);
